@@ -40,6 +40,8 @@ apt {
 dependencies {
     compile 'org.springframework.android:spring-android-rest-template:2.0.0.M3'
     compile 'com.google.code.gson:gson:2.7'
+    compile project(':logtape')
+
     apt "org.androidannotations:androidannotations:$AAVersion"
     compile "org.androidannotations:androidannotations-api:$AAVersion"
     apt "org.androidannotations:rest-spring:$AAVersion"

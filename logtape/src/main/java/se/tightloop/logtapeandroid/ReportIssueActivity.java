@@ -21,6 +21,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
 
+import se.tightloop.logtape.R;
+
 public class ReportIssueActivity extends AppCompatActivity {
 
     public static Boolean uploadIssue(JSONObject body)
@@ -84,7 +86,7 @@ public class ReportIssueActivity extends AppCompatActivity {
     public void submit(View view) {
         final JSONObject body = new JSONObject();
         try {
-            EditText e = (EditText)findViewById(se.tightloop.logtapeandroid.R.id.textField);
+            EditText e = (EditText)findViewById(R.id.textField);
             String description = "";
 
             if (e != null) {
@@ -135,9 +137,8 @@ public class ReportIssueActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(se.tightloop.logtapeandroid.R.layout.activity_report_issue);
-        ImageView header = (ImageView)findViewById(se.tightloop.logtapeandroid.R.id.imageView);
+        setContentView(R.layout.activity_report_issue);
+        ImageView header = (ImageView)findViewById(R.id.imageView);
         header.setImageBitmap(LogTape.lastScreenshot);
     }
 }
