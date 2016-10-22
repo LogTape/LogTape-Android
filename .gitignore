@@ -25,3 +25,5 @@
 # Gradle:
 .idea/gradle.xml
 .idea/libraries
+
+projectFilesBackup
