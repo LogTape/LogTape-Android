@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,28 +8,43 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
     tools:context="se.tightloop.logtapeandroid.ReportIssueActivity">
 
-    <ImageView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        app:srcCompat="?android:attr/editTextBackground"
-        android:layout_marginTop="10dp"
-        android:id="@+id/imageView" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-    <EditText
-        android:id="@+id/textField"
-        android:hint="What happened?"
-        android:layout_marginTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_below="@id/imageView"/>
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:srcCompat="?android:attr/editTextBackground"
+            android:layout_marginTop="10dp"
+            android:id="@+id/imageView" />
+    </LinearLayout>
 
-    <Button
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:onClick="submit"
-        android:layout_marginTop="10dp"
-        android:text="Submit"
-        android:layout_below="@id/textField"/>
-</RelativeLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/textField"
+            android:hint="What happened?"
+            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:onClick="submit"
+            android:layout_marginTop="10dp"
+            android:text="Submit"
+            />
+    </LinearLayout>
+
+</LinearLayout>

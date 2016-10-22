@@ -1,5 +1,6 @@
 package se.tightloop.logtapeandroid;
 
+import android.app.ProgressDialog;
 import android.content.pm.PackageInfo;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -110,10 +111,20 @@ public class ReportIssueActivity extends AppCompatActivity {
             body.put("timestamp", LogTapeUtil.getUTCDateString(new Date()));
             body.put("title", description);
 
+
+            final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
+                    "", true);
+
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
                     uploadIssue(body);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            progress.dismiss();
+                        }
+                    });
                 }
             });
         } catch (Exception e) {

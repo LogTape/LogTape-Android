@@ -18,6 +18,20 @@ import java.util.TimeZone;
  */
 
 public class LogTapeUtil {
+    public static byte[] getBytesFromInputStream(InputStream is) throws IOException
+    {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        byte[] buffer = new byte[0xFFFF];
+
+        for (int len; (len = is.read(buffer)) != -1;)
+            os.write(buffer, 0, len);
+
+        os.flush();
+
+        is.reset();
+        return os.toByteArray();
+    }
+
     public static String readStreamToString(InputStream is) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();

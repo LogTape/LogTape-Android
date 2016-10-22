@@ -14,7 +14,6 @@ import org.androidannotations.rest.spring.annotations.RestService;
 import se.tightloop.logtapeandroid.LogTape;
 import se.tightloop.logtapeandroid.R;
 import se.tightloop.logtapesample.model.GetData;
-import se.tightloop.logtapesample.spring.RestClient;
 
 /**
  * Created by dnils on 09/10/16.
@@ -43,10 +42,11 @@ public class TestActivity extends Activity {
 
     @AfterInject
     void afterInject() {
-        //fetchGetData();
+        LogTape.Log("Log from TestActivity");
+        makeNetworkCalls();
     }
 
-    public void makeNetworkCalls(View v) {
+    public void makeNetworkCalls() {
         fetchWithSpring();
     }
 

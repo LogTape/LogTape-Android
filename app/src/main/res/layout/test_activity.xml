@@ -14,22 +14,16 @@ tools:context="se.tightloop.logtapesample.TestActivity">
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Test activity"
+        android:text="This activity will do some log calls and a few network requests using different libraries. Shake the device to launch report activity or press the button below."
         android:id="@+id/textView" />
 
     <Button
         android:id="@+id/reportButton"
         android:layout_below="@id/textView"
+        android:layout_marginTop="20dp"
+        android:layout_centerHorizontal="true"
         android:onClick="launchReportActivity"
         android:text="Launch report activity"
-        android:layout_width="220dp"
-        android:layout_height="40dp" />
-
-
-    <Button
-        android:layout_below="@id/reportButton"
-        android:onClick="makeNetworkCalls"
-        android:text="Make some network calls"
         android:layout_width="220dp"
         android:layout_height="40dp" />
 </RelativeLayout>
