@@ -5,10 +5,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+
+import com.squareup.seismic.ShakeDetector;
 
 import org.json.JSONArray;
 
@@ -25,13 +25,14 @@ import se.tightloop.logtapeandroid.events.RequestLogEvent;
  * Created by dnils on 09/10/16.
  */
 
-public class LogTape implements SensorEventListener {
+public class LogTape implements ShakeDetector.Listener {
 
     private Application application;
     private List<LogEvent> events = new ArrayList<LogEvent>();
     private static LogTape instance = null;
     private Activity currentActivity;
 
+    private ShakeDetector shakeDetector = null;
     String apiKey;
     static Bitmap lastScreenshot = null;
 
@@ -43,6 +44,11 @@ public class LogTape implements SensorEventListener {
         System.out.println("LogTape created");
         this.application = application;
         this.apiKey = apiKey;
+
+        this.shakeDetector = new ShakeDetector(this);
+        SensorManager manager = (SensorManager)application.getSystemService(Context.SENSOR_SERVICE);
+        this.shakeDetector.start(manager);
+
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -88,11 +94,20 @@ public class LogTape implements SensorEventListener {
     }
 
     public static void ShowReportActivity() {
+
+        if (instance.currentActivity instanceof ReportIssueActivity) {
+            return;
+        }
+
         lastScreenshot = LogTapeUtil.getScreenShot(instance.currentActivity.getWindow().getDecorView().getRootView());
 
         Intent intent = new Intent(instance.application, ReportIssueActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         instance.application.startActivity(intent);
+    }
+
+    public void hearShake() {
+        ShowReportActivity();
     }
 
     public static void Log(String message) {
@@ -112,16 +127,6 @@ public class LogTape implements SensorEventListener {
                                   int elapsedTimeMs)
     {
         instance.events.add(new RequestLogEvent(timestamp, url, method, requestHeaders, body, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, elapsedTimeMs));
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // ignore
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-
     }
 
     public static String ApiKey() {

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">LogTapeAndroid</string>
+    <string name="issue_uploaded_with_id">Issue uploaded with ID %1$d</string>
+    <string name="issue_upload_failed">Issue could not be uploaded. Try again.</string>
 </resources>

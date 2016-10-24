@@ -10,6 +10,7 @@ import android.util.Base64;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,7 +26,7 @@ import se.tightloop.logtape.R;
 
 public class ReportIssueActivity extends AppCompatActivity {
 
-    public static Boolean uploadIssue(JSONObject body)
+    public static int uploadIssue(JSONObject body)
     {
         URL url;
         HttpURLConnection connection = null;
@@ -55,18 +56,18 @@ public class ReportIssueActivity extends AppCompatActivity {
                 is = connection.getInputStream();
                 System.out.println("Got OK response");
                 String responseStr = LogTapeUtil.readStreamToString(is);
+                JSONObject jsonObject = new JSONObject(responseStr);
+                int issueNumber = jsonObject.getInt("issueNumber");
                 System.out.println("Response: " + responseStr);
-                return true;
+                return issueNumber;
             } else {
                 System.out.println("Got fail response");
-                //return is = connection.getErrorStream();
-                return false;
+                return 0;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            return 0;
         } finally {
-
             if(connection != null) {
                 connection.disconnect();
             }
@@ -117,14 +118,23 @@ public class ReportIssueActivity extends AppCompatActivity {
             final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
                     "", true);
 
+            final ReportIssueActivity activity = this;
+
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
-                    uploadIssue(body);
+                    final int issueNum = uploadIssue(body);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             progress.dismiss();
+                            if (issueNum > 0) {
+                                String format = getResources().getString(R.string.issue_uploaded_with_id);
+                                Toast.makeText(activity, String.format(format, issueNum), Toast.LENGTH_LONG).show();
+                                activity.finish();
+                            } else {
+                                Toast.makeText(activity, R.string.issue_upload_failed, Toast.LENGTH_LONG).show();
+                            }
                         }
                     });
                 }
