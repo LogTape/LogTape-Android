@@ -76,6 +76,7 @@ public class RequestLogEvent extends LogEvent {
             request.put("url", url);
             request.put("headers", requestHeadersObj);
 
+            response.put("statusCode", httpStatusCode);
             response.put("headers", responseHeadersObj);
 
             try {
