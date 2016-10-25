@@ -1,4 +1,4 @@
-package se.tightloop.logtapesample.spring;
+package se.tightloop.logtape.spring;
 
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;

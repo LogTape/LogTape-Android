@@ -1,6 +1,6 @@
-package se.tightloop.logtapesample.spring;
+package se.tightloop.logtape.spring;
 
-import org.androidannotations.annotations.EBean;
+
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
@@ -8,9 +8,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
  * Created by dnils on 22/10/16.
  */
 
-@EBean
 public class BufferedRequestFactory extends BufferingClientHttpRequestFactory {
-    BufferedRequestFactory() {
+    public BufferedRequestFactory() {
         super(new SimpleClientHttpRequestFactory());
     }
 }

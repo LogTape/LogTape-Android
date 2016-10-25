@@ -1,1 +1,1 @@
-include ':app', ':logtape'
+include ':app', ':logtape', ':logtape-spring'

@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/LogTapeAndroid.iml" filepath="$PROJECT_DIR$/LogTapeAndroid.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/logtape/logtape.iml" filepath="$PROJECT_DIR$/logtape/logtape.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logtape-spring/logtape-spring.iml" filepath="$PROJECT_DIR$/logtape-spring/logtape-spring.iml" />
     </modules>
   </component>
 </project>
