@@ -13,17 +13,17 @@ import se.tightloop.logtapeandroid.LogTapeUtil;
  */
 
 public class RequestLogEvent extends LogEvent {
-    String url;
-    String method;
-    Map<String, String> requestHeaders;
-    byte[] body;
-    int httpStatusCode;
-    String httpStatusText;
-    Map<String, String> responseHeaders;
-    byte[] responseBody;
-    String errorText;
-    int elapsedTimeMs;
-    Date timestamp;
+    private final String url;
+    private final String method;
+    private final Map<String, String> requestHeaders;
+    private final byte[] body;
+    private final int httpStatusCode;
+    private final String httpStatusText;
+    private final Map<String, String> responseHeaders;
+    private final byte[] responseBody;
+    private final String errorText;
+    private final int elapsedTimeMs;
+    private final Date timestamp;
 
     public RequestLogEvent(Date timestamp,
                            String url,
