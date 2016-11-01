@@ -12,6 +12,7 @@ import com.squareup.seismic.ShakeDetector;
 
 import org.json.JSONArray;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,47 +27,52 @@ import se.tightloop.logtapeandroid.events.RequestLogEvent;
  */
 
 public class LogTape implements ShakeDetector.Listener {
-
-    private Application application;
     private List<LogEvent> events = new ArrayList<LogEvent>();
     private static LogTape instance = null;
-    private Activity currentActivity;
+    private WeakReference<Activity> currentActivity;
 
     private ShakeDetector shakeDetector = null;
     String apiKey;
     static Bitmap lastScreenshot = null;
 
     public Context getActivityContext() {
-        return currentActivity;
+        return currentActivity.get();
     }
 
     private LogTape(Application application, String apiKey) {
         System.out.println("LogTape created");
-        this.application = application;
         this.apiKey = apiKey;
 
-        this.shakeDetector = new ShakeDetector(this);
+        final ShakeDetector detector = new ShakeDetector(this);
+        this.shakeDetector = detector;
         SensorManager manager = (SensorManager)application.getSystemService(Context.SENSOR_SERVICE);
         this.shakeDetector.start(manager);
 
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                LogTape.instance.currentActivity = activity;
+                detector.stop();
+                LogTape.instance.currentActivity = new WeakReference<>(activity);
+                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
             }
 
             @Override
             public void onActivityStarted(Activity activity) {
-                LogTape.instance.currentActivity = activity;
+                detector.stop();
+                LogTape.instance.currentActivity = new WeakReference<>(activity);
+                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
             }
 
             @Override
             public void onActivityResumed(Activity activity) {
-                LogTape.instance.currentActivity = activity;
+                detector.stop();
+                LogTape.instance.currentActivity = new WeakReference<>(activity);
+                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
             }
 
             @Override
             public void onActivityPaused(Activity activity) {
+                detector.stop();
                 LogTape.instance.currentActivity = null;
             }
 
@@ -95,15 +101,17 @@ public class LogTape implements ShakeDetector.Listener {
 
     public static void ShowReportActivity() {
 
-        if (instance.currentActivity instanceof ReportIssueActivity) {
+        Activity activity = instance.currentActivity.get();
+
+        if (activity == null || activity instanceof ReportIssueActivity) {
             return;
         }
 
-        lastScreenshot = LogTapeUtil.getScreenShot(instance.currentActivity.getWindow().getDecorView().getRootView());
+        lastScreenshot = LogTapeUtil.getScreenShot(activity.getWindow().getDecorView().getRootView());
 
-        Intent intent = new Intent(instance.application, ReportIssueActivity.class);
+        Intent intent = new Intent(activity.getApplicationContext(), ReportIssueActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        instance.application.startActivity(intent);
+        activity.startActivity(intent);
     }
 
     public void hearShake() {
