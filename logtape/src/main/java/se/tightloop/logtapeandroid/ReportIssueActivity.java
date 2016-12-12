@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.DataOutputStream;
@@ -73,6 +74,16 @@ public class ReportIssueActivity extends AppCompatActivity {
         }
     }
 
+    JSONObject labelValueObject(String label, String value) throws JSONException {
+        JSONObject ret = new JSONObject();
+
+        ret.put("label", label);
+        ret.put("value", value);
+
+        return ret;
+    }
+
+
     public void submit(View view) {
         final JSONObject body = new JSONObject();
         try {
@@ -89,20 +100,20 @@ public class ReportIssueActivity extends AppCompatActivity {
                 images.put(LogTapeUtil.encodeImageToBase64(LogTape.lastScreenshot));
             }
 
-            JSONObject properties = new JSONObject();
+            JSONArray properties = new JSONArray();
             PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
 
-
-            properties.put("Android OS version", Build.VERSION.RELEASE);
-            properties.put("Application version", packageInfo.versionCode + "." + packageInfo.versionName);
-            properties.put("Device model", Build.MODEL);
-            properties.put("Device brand", Build.BRAND);
+            properties.put(labelValueObject("Android OS version", Build.VERSION.RELEASE));
+            properties.put(labelValueObject("Application version", packageInfo.versionCode + "." + packageInfo.versionName));
+            properties.put(labelValueObject("Device model", Build.MODEL));
+            properties.put(labelValueObject("Device brand", Build.BRAND));
 
             body.put("events", LogTape.GetJSONItems());
             body.put("images", images);
             body.put("properties", properties);
             body.put("timestamp", LogTapeUtil.getUTCDateString(new Date()));
             body.put("title", description);
+
 
             final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
                     "", true);
