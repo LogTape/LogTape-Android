@@ -12,16 +12,34 @@
     tools:context="se.tightloop.logtapeandroid.ReportIssueActivity">
 
     <LinearLayout
+        android:orientation="vertical"
+        android:layout_gravity="center"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
         <ImageView
-            android:layout_width="match_parent"
+            android:clickable="true"
+            android:onClick="editImage"
+            android:adjustViewBounds="true"
+            android:layout_width="wrap_content"
+            android:background="@color/colorBorder"
+            android:padding="1dp"
+            android:layout_marginBottom="40dp"
             android:layout_height="match_parent"
             app:srcCompat="?android:attr/editTextBackground"
             android:layout_marginTop="10dp"
             android:id="@+id/imageView" />
+        
+        <TextView
+            android:textColor="@color/colorLight"
+            android:layout_marginTop="-20dp"
+            android:layout_width="match_parent"
+            android:textAlignment="center"
+            android:layout_marginBottom="10dp"
+            android:text="Tap on image to draw on it."
+            android:layout_height="20dp" />
     </LinearLayout>
 
     <LinearLayout

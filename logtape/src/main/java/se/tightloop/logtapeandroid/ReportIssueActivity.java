@@ -1,6 +1,7 @@
 package se.tightloop.logtapeandroid;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -83,6 +84,11 @@ public class ReportIssueActivity extends AppCompatActivity {
         return ret;
     }
 
+    public void editImage(View view) {
+        Intent intent = new Intent(getApplicationContext(), EditImageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
 
     public void submit(View view) {
         final JSONObject body = new JSONObject();

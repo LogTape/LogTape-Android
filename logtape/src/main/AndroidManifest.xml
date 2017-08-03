@@ -5,7 +5,8 @@
 
         <activity android:name="se.tightloop.logtapeandroid.ReportIssueActivity">
         </activity>
-
+        <activity android:name="se.tightloop.logtapeandroid.EditImageActivity">
+        </activity>
     </application>
 
 </manifest>
