@@ -46,19 +46,35 @@ public class PaintView extends View {
         this.mCanvas = new Canvas(mBitmap);
     }
 
+    private float mLastX, mLastY;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX();
         float y = event.getY();
+
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mPath.reset();
                 mPath.moveTo(x, y);
                 invalidate();
+
+                mLastX = x;
+                mLastY = y;
+
                 break;
             case MotionEvent.ACTION_MOVE:
-                mPath.lineTo(x, y);
+                float dy = mLastY - y;
+                float dx = mLastX - x;
+
+                if (Math.abs(dy) >= 4 || Math.abs(dx) >= 4) {
+                    mPath.quadTo(mLastX, mLastY, (x + mLastX) / 2,
+                            (y + mLastY) / 2);
+                    mLastX = x;
+                    mLastY = y;
+                }
+
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
@@ -68,7 +84,6 @@ public class PaintView extends View {
                 invalidate();
                 break;
         }
-
 
         return true;
     }
