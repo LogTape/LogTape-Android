@@ -5,6 +5,9 @@
 /.idea/libraries
 .DS_Store
 /build
+/logtape-volley/build
+/logtape-okhttp/build
+/logtape-spring/build
 /captures
 /app/build
 # User-specific stuff:

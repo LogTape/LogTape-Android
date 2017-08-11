@@ -41,7 +41,12 @@ dependencies {
     compile 'com.google.code.gson:gson:2.7'
     compile project(':logtape')
     compile project(':logtape-spring')
+    compile project(':logtape-okhttp')
+    compile project(':logtape-volley')
+
     compile 'org.springframework.android:spring-android-rest-template:2.0.0.M3'
+    compile 'com.squareup.okhttp3:okhttp:3.8.1'
+    compile 'com.android.volley:volley:1.0.0'
 
     apt "org.androidannotations:androidannotations:$AAVersion"
     compile "org.androidannotations:androidannotations-api:$AAVersion"

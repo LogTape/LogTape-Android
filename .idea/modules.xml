@@ -5,7 +5,9 @@
       <module fileurl="file://$PROJECT_DIR$/LogTapeAndroid.iml" filepath="$PROJECT_DIR$/LogTapeAndroid.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/logtape/logtape.iml" filepath="$PROJECT_DIR$/logtape/logtape.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logtape-okhttp/logtape-okhttp.iml" filepath="$PROJECT_DIR$/logtape-okhttp/logtape-okhttp.iml" />
       <module fileurl="file://$PROJECT_DIR$/logtape-spring/logtape-spring.iml" filepath="$PROJECT_DIR$/logtape-spring/logtape-spring.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logtape-volley/logtape-volley.iml" filepath="$PROJECT_DIR$/logtape-volley/logtape-volley.iml" />
     </modules>
   </component>
 </project>
