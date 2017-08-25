@@ -21,6 +21,7 @@ import java.util.Map;
 import se.tightloop.logtapeandroid.events.LogEvent;
 import se.tightloop.logtapeandroid.events.MessageLogEvent;
 import se.tightloop.logtapeandroid.events.RequestLogEvent;
+import se.tightloop.logtapeandroid.events.RequestStartedLogEvent;
 
 /**
  * Created by dnils on 09/10/16.
@@ -40,7 +41,6 @@ public class LogTape implements ShakeDetector.Listener {
     }
 
     private LogTape(Application application, String apiKey) {
-        System.out.println("LogTape created");
         this.apiKey = apiKey;
 
         final ShakeDetector detector = new ShakeDetector(this);
@@ -95,11 +95,22 @@ public class LogTape implements ShakeDetector.Listener {
         });
     }
 
+    public static void init(int apiKeyId, Application application) {
+        init(application.getResources().getString(apiKeyId), application);
+    }
+
     public static void init(String apiKey, Application application) {
-        instance = new LogTape(application, apiKey);
+        if (instance != null) {
+            instance.apiKey = apiKey;
+        } else {
+            instance = new LogTape(application, apiKey);
+        }
     }
 
     public static void ShowReportActivity() {
+        if (instance == null) {
+            return;
+        }
 
         Activity activity = instance.currentActivity.get();
 
@@ -115,37 +126,59 @@ public class LogTape implements ShakeDetector.Listener {
     }
 
     public void hearShake() {
+
         ShowReportActivity();
+
     }
 
     public static void Log(String message) {
-        instance.events.add(new MessageLogEvent(message));
+        if (instance != null) {
+            instance.events.add(new MessageLogEvent(message));
+        }
     }
 
-    public static void LogRequest(Date timestamp,
-                                  String url,
-                                  String method,
-                                  Map<String, String> requestHeaders,
-                                  byte[] body,
-                                  int httpStatusCode,
-                                  String httpStatusText,
-                                  Map<String, String> responseHeaders,
-                                  byte[] responseBody,
-                                  String errorText,
-                                  int elapsedTimeMs)
+    public static RequestStartedLogEvent LogRequestStart(String url,
+                                                         String method,
+                                                         Map<String, String> requestHeaders,
+                                                         byte[] body)
     {
-        instance.events.add(new RequestLogEvent(timestamp, url, method, requestHeaders, body, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, elapsedTimeMs));
+        if (instance == null) {
+            return null;
+        }
+
+        RequestStartedLogEvent ret = new RequestStartedLogEvent(new Date(), url, method, requestHeaders, body);
+        instance.events.add(ret);
+        return ret;
+    }
+
+    public static void LogRequestFinished(RequestStartedLogEvent startEvent,
+                                          int httpStatusCode,
+                                          String httpStatusText,
+                                          Map<String, String> responseHeaders,
+                                          byte[] responseBody,
+                                          String errorText)
+    {
+
+        if (instance != null) {
+            instance.events.add(new RequestLogEvent(new Date(), startEvent, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText));
+        }
     }
 
     public static String ApiKey() {
-        return instance.apiKey;
+        if (instance != null) {
+            return instance.apiKey;
+        } else {
+            return "";
+        }
     }
 
     public static JSONArray GetJSONItems() {
         JSONArray eventArray = new JSONArray();
 
-        for (LogEvent e : instance.events) {
-            eventArray.put(e.toJSON());
+        if (instance != null) {
+            for (LogEvent e : instance.events) {
+                eventArray.put(e.toJSON());
+            }
         }
 
         return eventArray;

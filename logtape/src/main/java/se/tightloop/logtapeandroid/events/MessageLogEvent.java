@@ -13,9 +13,9 @@ import se.tightloop.logtapeandroid.LogTapeUtil;
 public class MessageLogEvent extends LogEvent {
 
     private final String message;
-    private final Date timestamp = new Date();
 
     public MessageLogEvent(String message) {
+        this.timestamp = new Date();
         this.message = message;
     }
 

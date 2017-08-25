@@ -13,68 +13,49 @@ import se.tightloop.logtapeandroid.LogTapeUtil;
  */
 
 public class RequestLogEvent extends LogEvent {
-    private final String url;
-    private final String method;
-    private final Map<String, String> requestHeaders;
-    private final byte[] body;
     private final int httpStatusCode;
     private final String httpStatusText;
     private final Map<String, String> responseHeaders;
     private final byte[] responseBody;
     private final String errorText;
-    private final int elapsedTimeMs;
+    private final long elapsedTimeMs;
     private final Date timestamp;
+    private final RequestStartedLogEvent reqStartedEvent;
 
     public RequestLogEvent(Date timestamp,
-                           String url,
-                           String method,
-                           Map<String, String> requestHeaders,
-                           byte[] body,
+                           RequestStartedLogEvent reqStartedEvent,
                            int httpStatusCode,
                            String httpStatusText,
                            Map<String, String> responseHeaders,
                            byte[] responseBody,
-                           String errorText,
-                           int elapsedTimeMs)
+                           String errorText)
     {
+        this.elapsedTimeMs = timestamp.getTime() - reqStartedEvent.timestamp.getTime();
         this.timestamp = timestamp;
-        this.url = url;
-        this.method = method;
-        this.requestHeaders = requestHeaders;
-        this.body = body;
+        this.reqStartedEvent = reqStartedEvent;
         this.httpStatusCode = httpStatusCode;
         this.httpStatusText = httpStatusText;
         this.responseHeaders = responseHeaders;
         this.responseBody = responseBody;
         this.errorText = errorText;
-        this.elapsedTimeMs = elapsedTimeMs;
     }
 
     @Override
     public JSONObject toJSON() {
-        JSONObject ret = new JSONObject();
+        JSONObject ret = this.reqStartedEvent.toJSON();
         JSONObject response = new JSONObject();
-        JSONObject request = new JSONObject();
         JSONObject data = new JSONObject();
 
         try {
             JSONObject responseHeadersObj = new JSONObject();
-            JSONObject requestHeadersObj = new JSONObject();
-
-            for(Map.Entry<String, String> entry : this.requestHeaders.entrySet()) {
-                requestHeadersObj.put(entry.getKey(), entry.getValue());
-            }
 
             for(Map.Entry<String, String> entry : this.responseHeaders.entrySet()) {
                 responseHeadersObj.put(entry.getKey(), entry.getValue());
             }
 
+            ret.remove("type");
             ret.put("type", "REQUEST");
             ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp));
-
-            request.put("method", method);
-            request.put("url", url);
-            request.put("headers", requestHeadersObj);
 
             response.put("statusCode", httpStatusCode);
             response.put("statusText", httpStatusText);
@@ -87,15 +68,7 @@ public class RequestLogEvent extends LogEvent {
 
             }
 
-            try {
-                String requestBodyUtf = new String(body, "UTF-8");
-                request.put("data", requestBodyUtf);
-            } catch (Exception e) {
-
-            }
-
             data.put("response", response);
-            data.put("request", request);
             ret.put("data", data);
         } catch (JSONException exception) {
 

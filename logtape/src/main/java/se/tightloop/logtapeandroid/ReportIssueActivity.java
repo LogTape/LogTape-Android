@@ -17,8 +17,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.DataOutputStream;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -45,9 +45,9 @@ public class ReportIssueActivity extends AppCompatActivity {
             connection.connect();
 
             //Send request
-            DataOutputStream wr = new DataOutputStream(
-                    connection.getOutputStream ());
-            wr.writeBytes(body.toString());
+            OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
+            System.out.println(body.toString());
+            wr.write(body.toString());
             wr.flush();
             wr.close ();
 
