@@ -24,6 +24,7 @@ public class MessageLogEvent extends LogEvent {
         JSONObject ret = new JSONObject();
 
         try {
+            ret.put("id", this.id);
             ret.put("type", "LOG");
             ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp));
             ret.put("data", message);

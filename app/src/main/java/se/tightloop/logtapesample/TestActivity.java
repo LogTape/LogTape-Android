@@ -10,7 +10,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.androidannotations.annotations.AfterInject;
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
@@ -20,8 +19,9 @@ import org.json.JSONObject;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import se.tightloop.logtape.okhttp.LoggingInterceptor;
+import se.tightloop.logtape.okhttp.LogTapeLoggingInterceptor;
 import se.tightloop.logtape.volley.LogTapeVolleyStack;
+import se.tightloop.logtapeandroid.BuildConfig;
 import se.tightloop.logtapeandroid.LogTape;
 import se.tightloop.logtapeandroid.R;
 import se.tightloop.logtapesample.model.GetData;
@@ -44,7 +44,16 @@ public class TestActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (BuildConfig.DEBUG) {
+            LogTape.init(R.string.log_tape_key, this.getApplication());
+        }
+
         setContentView(R.layout.test_activity);
+        LogTape.Log("Log from TestActivity");
+        fetchWithSpring();
+        fetchWithOkHTTP();
+        fetchWithVolley();
     }
 
 
@@ -70,7 +79,7 @@ public class TestActivity extends Activity {
     @Background
     void fetchWithOkHTTP() {
         OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(new LoggingInterceptor())
+                .addInterceptor(new LogTapeLoggingInterceptor())
                 .build();
 
         okhttp3.Request request = new okhttp3.Request.Builder()
@@ -93,18 +102,6 @@ public class TestActivity extends Activity {
     void fetchWithSpring() {
         GetData data = restClient.get();
         System.out.println("Result: " + data.url);
-    }
-
-    @AfterInject
-    void afterInject() {
-        LogTape.Log("Log from TestActivity");
-        makeNetworkCalls();
-    }
-
-    public void makeNetworkCalls() {
-        fetchWithSpring();
-        fetchWithOkHTTP();
-        fetchWithVolley();
     }
 
     public void launchReportActivity(View button) {

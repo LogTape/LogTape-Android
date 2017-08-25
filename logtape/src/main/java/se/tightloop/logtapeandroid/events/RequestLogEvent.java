@@ -44,9 +44,14 @@ public class RequestLogEvent extends LogEvent {
     public JSONObject toJSON() {
         JSONObject ret = this.reqStartedEvent.toJSON();
         JSONObject response = new JSONObject();
-        JSONObject data = new JSONObject();
+        JSONObject data = null;
 
         try {
+            ret.put("startId", this.reqStartedEvent.id);
+            ret.put("id", this.id);
+
+            data = ret.getJSONObject("data");
+
             JSONObject responseHeadersObj = new JSONObject();
 
             for(Map.Entry<String, String> entry : this.responseHeaders.entrySet()) {
@@ -60,6 +65,7 @@ public class RequestLogEvent extends LogEvent {
             response.put("statusCode", httpStatusCode);
             response.put("statusText", httpStatusText);
             response.put("headers", responseHeadersObj);
+            response.put("time", this.elapsedTimeMs);
 
             try {
                 String utfResponseBody = new String(responseBody, "UTF-8");

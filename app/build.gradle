@@ -23,6 +23,9 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        debug {
+
+        }
     }
 }
 
@@ -34,6 +37,17 @@ apt {
     arguments {
         resourcePackageName android.defaultConfig.applicationId
         androidManifestFile variant.outputs[0]?.processResources?.manifestFile
+    }
+}
+
+android {
+    buildTypes {
+        debug {
+            resValue "string", "log_tape_key", "5f559afc-6248-4e90-b9d0-d185e7a9f0d0"
+        }
+        release {
+            resValue "string", "log_tape_key", ""
+        }
     }
 }
 

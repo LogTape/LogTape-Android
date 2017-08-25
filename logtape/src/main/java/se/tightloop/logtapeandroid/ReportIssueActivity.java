@@ -33,6 +33,7 @@ public class ReportIssueActivity extends AppCompatActivity {
         HttpURLConnection connection = null;
         try {
             url = new URL("https://www.logtape.io:443/api/issues");
+
             connection = (HttpURLConnection)url.openConnection();
             connection.setDoOutput(true);
 

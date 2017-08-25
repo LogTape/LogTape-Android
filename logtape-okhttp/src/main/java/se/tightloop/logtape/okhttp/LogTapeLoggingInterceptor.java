@@ -13,8 +13,9 @@ import okhttp3.ResponseBody;
 import okio.Buffer;
 import okio.BufferedSource;
 import se.tightloop.logtapeandroid.LogTape;
+import se.tightloop.logtapeandroid.events.RequestStartedLogEvent;
 
-public class LoggingInterceptor implements Interceptor {
+public class LogTapeLoggingInterceptor implements Interceptor {
     // We only support headers with unique keys for now. If
     // this turns out to be problematic we will add support
     // for multiple keys later on.
@@ -54,22 +55,22 @@ public class LoggingInterceptor implements Interceptor {
     @Override public Response intercept(Interceptor.Chain chain) throws IOException {
         Date startDate = new Date();
         Request request = chain.request();
+
+        RequestStartedLogEvent startEvent = LogTape.LogRequestStart(request.url().toString(),
+                request.method(),
+                multiValueMapToSingleValueMap(request.headers().toMultimap()),
+                requestBodyToBuffer(request));
+
         Response response = chain.proceed(request);
 
         ResponseBody copiedBody = copyBody(response.body(), 999999999);
 
-        LogTape.LogRequest(startDate,
-                request.url().toString(),
-                request.method(),
-                multiValueMapToSingleValueMap(request.headers().toMultimap()),
-                requestBodyToBuffer(request),
+        LogTape.LogRequestFinished(startEvent,
                 response.networkResponse().code(),
                 response.networkResponse().message(),
                 multiValueMapToSingleValueMap(response.headers().toMultimap()),
                 copiedBody.bytes(),
-                "",
-                (int)(response.receivedResponseAtMillis() - response.sentRequestAtMillis())
-                );
+                "");
 
         return response;
     }

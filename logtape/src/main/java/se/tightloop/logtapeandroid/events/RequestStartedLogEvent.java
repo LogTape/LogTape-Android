@@ -34,12 +34,12 @@ public class RequestStartedLogEvent extends LogEvent {
     @Override
     public JSONObject toJSON() {
         JSONObject ret = new JSONObject();
-        JSONObject response = new JSONObject();
         JSONObject request = new JSONObject();
         JSONObject data = new JSONObject();
 
         try {
-            JSONObject responseHeadersObj = new JSONObject();
+            ret.put("id", this.id);
+
             JSONObject requestHeadersObj = new JSONObject();
 
             for(Map.Entry<String, String> entry : this.requestHeaders.entrySet()) {
@@ -53,7 +53,6 @@ public class RequestStartedLogEvent extends LogEvent {
             request.put("url", url);
             request.put("headers", requestHeadersObj);
 
-            response.put("headers", responseHeadersObj);
 
             try {
                 String requestBodyUtf = new String(body, "UTF-8");
@@ -62,7 +61,6 @@ public class RequestStartedLogEvent extends LogEvent {
 
             }
 
-            data.put("response", response);
             data.put("request", request);
             ret.put("data", data);
         } catch (JSONException exception) {
