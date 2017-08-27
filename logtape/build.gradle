@@ -13,7 +13,7 @@ ext {
     siteUrl = 'https://github.com/LogTape/LogTape-Android'
     gitUrl = 'https://github.com/LogTape/LogTape-Android.git'
 
-    libraryVersion = '0.1.8'
+    libraryVersion = '0.1.9'
 
     developerId = 'dnils'
     developerName = 'Dan Nilsson'
@@ -33,7 +33,7 @@ android {
         minSdkVersion 17
         targetSdkVersion 24
         versionCode 1
-        versionName "0.1.8"
+        versionName "0.1.9"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
