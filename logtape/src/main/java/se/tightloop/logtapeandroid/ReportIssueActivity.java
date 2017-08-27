@@ -27,7 +27,17 @@ import se.tightloop.logtape.R;
 
 public class ReportIssueActivity extends AppCompatActivity {
 
-    public static int uploadIssue(JSONObject body)
+    public static class UploadResult {
+        UploadResult(int issueNum, Integer deletedIssueNumber) {
+            this.issueNum = issueNum;
+            this.deletedIssueNumber = deletedIssueNumber;
+        }
+
+        int issueNum;
+        Integer deletedIssueNumber;
+    }
+
+    public static UploadResult uploadIssue(JSONObject body)
     {
         URL url;
         HttpURLConnection connection = null;
@@ -60,15 +70,23 @@ public class ReportIssueActivity extends AppCompatActivity {
                 String responseStr = LogTapeUtil.readStreamToString(is);
                 JSONObject jsonObject = new JSONObject(responseStr);
                 int issueNumber = jsonObject.getInt("issueNumber");
+
+                Integer deletedIssueNumber = null;
+
+                if(jsonObject.has("deletedIssueNumber")) {
+                    deletedIssueNumber = jsonObject.getInt("deletedIssueNumber");
+                }
+
                 System.out.println("Response: " + responseStr);
-                return issueNumber;
+
+                return new UploadResult(issueNumber, deletedIssueNumber);
             } else {
                 System.out.println("Got fail response");
-                return 0;
+                return null;
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;
+            return null;
         } finally {
             if(connection != null) {
                 connection.disconnect();
@@ -130,14 +148,21 @@ public class ReportIssueActivity extends AppCompatActivity {
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
-                    final int issueNum = uploadIssue(body);
+                    final UploadResult result = uploadIssue(body);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             progress.dismiss();
-                            if (issueNum > 0) {
+                            if (result != null) {
                                 String format = getResources().getString(R.string.issue_uploaded_with_id);
-                                Toast.makeText(activity, String.format(format, issueNum), Toast.LENGTH_LONG).show();
+                                String text = String.format(format, result.issueNum);
+
+                                if (result.deletedIssueNumber != null) {
+                                    String deletedFormat = getResources().getString(R.string.issue_deleted_with_id);
+                                    text += String.format(deletedFormat, result.deletedIssueNumber.intValue());
+                                }
+
+                                Toast.makeText(activity, text, Toast.LENGTH_LONG).show();
                                 activity.finish();
                             } else {
                                 Toast.makeText(activity, R.string.issue_upload_failed, Toast.LENGTH_LONG).show();

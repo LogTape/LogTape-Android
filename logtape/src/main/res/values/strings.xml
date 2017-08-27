@@ -2,5 +2,6 @@
     <string name="app_name">LogTapeAndroid</string>
     <string name="draw_image_instructions">Draw on the image with your finger to mark relevant areas. Go back when done.</string>
     <string name="issue_uploaded_with_id">Issue uploaded with ID %1$d</string>
+    <string name="issue_deleted_with_id">. Deleted issue with ID %1$d to make room (oldest issue)."</string>
     <string name="issue_upload_failed">Issue could not be uploaded. Try again.</string>
 </resources>
