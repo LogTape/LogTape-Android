@@ -1,4 +1,4 @@
-package se.tightloop.logtapeandroid.events;
+package se.tightloop.logtapeandroid;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -6,24 +6,24 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.util.Map;
 
-import se.tightloop.logtapeandroid.LogTapeUtil;
-
 /**
  * Created by dnils on 2017-08-24.
  */
 
-public class RequestStartedLogEvent extends LogEvent {
+class RequestStartedLogEvent extends LogEvent {
     private final String url;
     private final String method;
     private final Map<String, String> requestHeaders;
     private final byte[] body;
 
     public RequestStartedLogEvent(Date timestamp,
-                           String url,
-                           String method,
-                           Map<String, String> requestHeaders,
-                           byte[] body)
+                                  String url,
+                                  String method,
+                                  Map<String, String> requestHeaders,
+                                  byte[] body,
+                                  Map<String, String> tags)
     {
+        super(tags);
         this.timestamp = new Date();
         this.url = url;
         this.method = method;
@@ -39,6 +39,10 @@ public class RequestStartedLogEvent extends LogEvent {
 
         try {
             ret.put("id", this.id);
+
+            if (tags != null) {
+                ret.put("tags", new JSONObject(tags));
+            }
 
             JSONObject requestHeadersObj = new JSONObject();
 

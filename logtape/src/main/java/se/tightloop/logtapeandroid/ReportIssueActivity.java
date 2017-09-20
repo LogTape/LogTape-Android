@@ -3,6 +3,7 @@ package se.tightloop.logtapeandroid;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,15 +20,20 @@ import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
 
 import se.tightloop.logtape.R;
 
-public class ReportIssueActivity extends AppCompatActivity {
+import static se.tightloop.logtapeandroid.LogTape.lastScreenshot;
 
-    public static class UploadResult {
+public class ReportIssueActivity extends AppCompatActivity {
+    private AsyncTask<Void, Void, Void> saveTask = null;
+    private AsyncTask<Void, Void, Bitmap> loadTask = null;
+
+    static class UploadResult {
         UploadResult(int issueNum, Integer deletedIssueNumber) {
             this.issueNum = issueNum;
             this.deletedIssueNumber = deletedIssueNumber;
@@ -37,7 +43,7 @@ public class ReportIssueActivity extends AppCompatActivity {
         Integer deletedIssueNumber;
     }
 
-    public static UploadResult uploadIssue(JSONObject body)
+    static UploadResult uploadIssue(JSONObject body)
     {
         URL url;
         HttpURLConnection connection = null;
@@ -121,8 +127,8 @@ public class ReportIssueActivity extends AppCompatActivity {
 
             JSONArray images = new JSONArray();
 
-            if (LogTape.lastScreenshot != null) {
-                images.put(LogTapeUtil.encodeImageToBase64(LogTape.lastScreenshot));
+            if (lastScreenshot != null) {
+                images.put(LogTapeUtil.encodeImageToBase64(lastScreenshot));
             }
 
             JSONArray properties = new JSONArray();
@@ -133,7 +139,6 @@ public class ReportIssueActivity extends AppCompatActivity {
             properties.put(labelValueObject("Device model", Build.MODEL));
             properties.put(labelValueObject("Device brand", Build.BRAND));
 
-            body.put("events", LogTape.GetJSONItems());
             body.put("images", images);
             body.put("properties", properties);
             body.put("timestamp", LogTapeUtil.getUTCDateString(new Date()));
@@ -143,32 +148,16 @@ public class ReportIssueActivity extends AppCompatActivity {
             final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
                     "", true);
 
-            final ReportIssueActivity activity = this;
-
-            AsyncTask.execute(new Runnable() {
+            LogTape.GetJSONItems(new LogTape.IssueListResultListener() {
                 @Override
-                public void run() {
-                    final UploadResult result = uploadIssue(body);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            progress.dismiss();
-                            if (result != null) {
-                                String format = getResources().getString(R.string.issue_uploaded_with_id);
-                                String text = String.format(format, result.issueNum);
+                public void onResultReceived(JSONArray result) {
+                    try {
+                        body.put("events", result);
+                    } catch (JSONException exception) {
 
-                                if (result.deletedIssueNumber != null) {
-                                    String deletedFormat = getResources().getString(R.string.issue_deleted_with_id);
-                                    text += String.format(deletedFormat, result.deletedIssueNumber.intValue());
-                                }
+                    }
 
-                                Toast.makeText(activity, text, Toast.LENGTH_LONG).show();
-                                activity.finish();
-                            } else {
-                                Toast.makeText(activity, R.string.issue_upload_failed, Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    });
+                    uploadBody(body, progress);
                 }
             });
         } catch (Exception e) {
@@ -176,11 +165,104 @@ public class ReportIssueActivity extends AppCompatActivity {
         }
     }
 
+
+    void uploadBody(final JSONObject body, final ProgressDialog progress) {
+        final ReportIssueActivity activity = this;
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                final UploadResult result = uploadIssue(body);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progress.dismiss();
+                        if (result != null) {
+                            String format = getResources().getString(R.string.issue_uploaded_with_id);
+                            String text = String.format(format, result.issueNum);
+
+                            if (result.deletedIssueNumber != null) {
+                                String deletedFormat = getResources().getString(R.string.issue_deleted_with_id);
+                                text += String.format(deletedFormat, result.deletedIssueNumber.intValue());
+                            }
+
+                            Toast.makeText(activity, text, Toast.LENGTH_LONG).show();
+                            activity.finish();
+                        } else {
+                            Toast.makeText(activity, R.string.issue_upload_failed, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_report_issue);
-        ImageView header = (ImageView)findViewById(R.id.imageView);
-        header.setImageBitmap(LogTape.lastScreenshot);
+        System.out.println("**LOGTAPE: Report issue activity onCreate");
+
+        if (LogTape.lastScreenshot != null) {
+            final ImageView header = (ImageView)findViewById(R.id.imageView);
+            header.setImageBitmap(LogTape.lastScreenshot);
+            saveScreenshot();
+        } else {
+            final WeakReference<ReportIssueActivity> reportActivity = new WeakReference<ReportIssueActivity>(this);
+
+            this.loadTask = new AsyncTask<Void, Void, Bitmap>() {
+                @Override
+                protected Bitmap doInBackground(Void... voids) {
+                    return LogTape.LoadScreenshotFromDisk();
+                }
+
+                @Override
+                protected void onPostExecute(Bitmap file) {
+                    if (!isCancelled()) {
+                        ReportIssueActivity activity = reportActivity.get();
+                        activity.loadTask = null;
+
+                        if (activity != null) {
+                            final ImageView header = (ImageView)activity.findViewById(R.id.imageView);
+                            if (header != null) {
+                                header.setImageBitmap(file);
+                            }
+                        }
+
+                        LogTape.lastScreenshot = file;
+                    }
+                }
+            }.execute();
+        }
+    }
+    private void saveScreenshot() {
+
+        final WeakReference<ReportIssueActivity> issueActivity = new WeakReference<ReportIssueActivity>(this);
+
+        saveTask = new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                LogTape.SaveScreenshotToDisk();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void res) {
+                if (!isCancelled()) {
+                    ReportIssueActivity activity = issueActivity.get();
+                    if (activity != null) {
+                        activity.saveTask = null;
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        System.out.println("**LOGTAPE: Report issue activity onRestart");
+        saveScreenshot();
     }
 }

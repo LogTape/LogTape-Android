@@ -14,6 +14,7 @@ import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.ViewById;
 import org.androidannotations.rest.spring.annotations.RestService;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import okhttp3.OkHttpClient;
@@ -21,7 +22,6 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import se.tightloop.logtape.okhttp.LogTapeLoggingInterceptor;
 import se.tightloop.logtape.volley.LogTapeVolleyStack;
-import se.tightloop.logtapeandroid.BuildConfig;
 import se.tightloop.logtapeandroid.LogTape;
 import se.tightloop.logtapeandroid.R;
 import se.tightloop.logtapesample.model.GetData;
@@ -45,12 +45,24 @@ public class TestActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (BuildConfig.DEBUG) {
-            LogTape.init(R.string.log_tape_key, this.getApplication());
+        setContentView(R.layout.test_activity);
+
+        LogTape.ClearLog();
+
+        LogTape.Log("TestActivity", "Log from TestActivity");
+
+        JSONObject testObject = new JSONObject();
+
+        try {
+            testObject.put("key", "value");
+            testObject.put("otherKey", 3232);
+         } catch(JSONException exc) {
+
         }
 
-        setContentView(R.layout.test_activity);
-        LogTape.Log("Log from TestActivity");
+        LogTape.LogObject("TestActivity", "A test object", testObject);
+
+
         fetchWithSpring();
         fetchWithOkHTTP();
         fetchWithVolley();

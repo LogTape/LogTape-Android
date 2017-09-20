@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import se.tightloop.logtapeandroid.LogTape;
-import se.tightloop.logtapeandroid.events.RequestStartedLogEvent;
 
 public class LogTapeVolleyStack extends HurlStack {
 
@@ -51,7 +50,7 @@ public class LogTapeVolleyStack extends HurlStack {
                 break;
         }
 
-       RequestStartedLogEvent startEvent = LogTape.LogRequestStart(request.getUrl(), method, request.getHeaders(), request.getBody());
+        Object startEvent = LogTape.LogRequestStart(request.getUrl(), method, request.getHeaders(), request.getBody(), null);
 
         HttpResponse ret = super.performRequest(request, additionalHeaders);
 
@@ -78,7 +77,7 @@ public class LogTapeVolleyStack extends HurlStack {
                     basicResponse.getStatusLine().getReasonPhrase(),
                     responseHeaders,
                     responseByteArray,
-                    "");
+                    "", null);
         }
 
         return ret;

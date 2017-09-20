@@ -1,5 +1,8 @@
 package se.tightloop.logtapeandroid;
 
+import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
@@ -18,15 +21,39 @@ public class EditImageActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.edit_image_activity);
+        mPaintView = (PaintView)findViewById(R.id.paintView);
+
+        if (LogTape.lastScreenshot != null) {
+            mPaintView.setBitmap(LogTape.lastScreenshot);
+        } else {
+            System.out.println("**LOGTAPE: Report issue activity onCreate");
+
+            final ProgressDialog progress = ProgressDialog.show(this, "Saving bitmap..",
+                    "", true);
+            new AsyncTask<Void, Void, Bitmap>() {
+                @Override
+                protected Bitmap doInBackground(Void... voids) {
+                    return LogTape.LoadScreenshotFromDisk();
+                }
+
+                @Override
+                protected void onPostExecute(Bitmap file) {
+                    System.out.println("**LOGTAPE: On post execute, EditImageAct");
+                    LogTape.lastScreenshot = file;
+                    progress.dismiss();
+                    if (mPaintView != null) {
+                        mPaintView.setBitmap(file);
+                        System.out.println("**LOGTAPE: Setting bitmap");
+                    }
+                }
+            }.execute();
+        }
 
     }
-
 
     @Override
     protected void onStart() {
         super.onStart();
-        mPaintView = (PaintView)findViewById(R.id.paintView);
-        mPaintView.setBitmap(LogTape.lastScreenshot);
 
         Toast.makeText(this, getString(R.string.draw_image_instructions), Toast.LENGTH_LONG).show();
     }

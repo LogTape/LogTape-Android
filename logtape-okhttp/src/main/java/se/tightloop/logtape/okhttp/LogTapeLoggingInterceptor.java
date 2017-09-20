@@ -13,7 +13,6 @@ import okhttp3.ResponseBody;
 import okio.Buffer;
 import okio.BufferedSource;
 import se.tightloop.logtapeandroid.LogTape;
-import se.tightloop.logtapeandroid.events.RequestStartedLogEvent;
 
 public class LogTapeLoggingInterceptor implements Interceptor {
     // We only support headers with unique keys for now. If
@@ -56,10 +55,10 @@ public class LogTapeLoggingInterceptor implements Interceptor {
         Date startDate = new Date();
         Request request = chain.request();
 
-        RequestStartedLogEvent startEvent = LogTape.LogRequestStart(request.url().toString(),
+        Object startEvent = LogTape.LogRequestStart(request.url().toString(),
                 request.method(),
                 multiValueMapToSingleValueMap(request.headers().toMultimap()),
-                requestBodyToBuffer(request));
+                requestBodyToBuffer(request), null);
 
         Response response = chain.proceed(request);
 
@@ -70,7 +69,7 @@ public class LogTapeLoggingInterceptor implements Interceptor {
                 response.networkResponse().message(),
                 multiValueMapToSingleValueMap(response.headers().toMultimap()),
                 copiedBody.bytes(),
-                "");
+                "", null);
 
         return response;
     }

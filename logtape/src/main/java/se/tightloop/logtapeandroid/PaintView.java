@@ -16,7 +16,7 @@ import se.tightloop.logtape.R;
  * Created by dnils on 2017-08-02.
  */
 
-public class PaintView extends View {
+class PaintView extends View {
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private final Path mPath = new Path();
@@ -37,9 +37,14 @@ public class PaintView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(R.color.paintBackground);
-        canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
+        if (mBitmap != null && mBitmapPaint != null) {
+            canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
+        }
+
         canvas.drawPath(mPath, mPaint);
     }
+
+
 
     public void setBitmap(Bitmap mBitmap) {
         this.mBitmap = mBitmap;

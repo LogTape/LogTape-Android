@@ -1,20 +1,21 @@
-package se.tightloop.logtapeandroid.events;
+package se.tightloop.logtapeandroid;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.Date;
 
-import se.tightloop.logtapeandroid.LogTapeUtil;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * Created by dnils on 09/10/16.
  */
 
-public class MessageLogEvent extends LogEvent {
+class MessageLogEvent extends LogEvent {
 
     private final String message;
 
-    public MessageLogEvent(String message) {
+    public MessageLogEvent(String message, Map<String, String> tags) {
+        super(tags);
         this.timestamp = new Date();
         this.message = message;
     }
@@ -25,6 +26,9 @@ public class MessageLogEvent extends LogEvent {
 
         try {
             ret.put("id", this.id);
+            if (tags != null) {
+                ret.put("tags", new JSONObject(tags));
+            }
             ret.put("type", "LOG");
             ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp));
             ret.put("data", message);
