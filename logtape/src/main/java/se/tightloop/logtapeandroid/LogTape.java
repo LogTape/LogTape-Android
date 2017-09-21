@@ -32,12 +32,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import se.tightloop.logtapeandroid.MessageLogEvent;
-import se.tightloop.logtapeandroid.ObjectLogEvent;
-import se.tightloop.logtapeandroid.RequestStartedLogEvent;
-import se.tightloop.logtapeandroid.RequestLogEvent;
-import se.tightloop.logtapeandroid.LogEvent;
-
 /**
  * Created by dnils on 09/10/16.
  */
@@ -63,13 +57,20 @@ public class LogTape {
         }
     }
 
-    private LogTape(Application application, String apiKey) {
+    private LogTape(Application application, String apiKey, LogTapeOptions options) {
+        if (options == null) {
+            options = new LogTapeOptions();
+        }
+
         this.apiKey = apiKey;
 
-        final ShakeDetector detector = new ShakeDetector(this.shakeInterceptor);
-        this.shakeDetector = detector;
-        SensorManager manager = (SensorManager)application.getSystemService(Context.SENSOR_SERVICE);
-        this.shakeDetector.start(manager);
+        if (options.trigger == LogTapeOptions.Trigger.ShakeGesture) {
+            this.shakeDetector = new ShakeDetector(this.shakeInterceptor);
+            SensorManager manager = (SensorManager)application.getSystemService(Context.SENSOR_SERVICE);
+            this.shakeDetector.start(manager);
+        }
+
+        final ShakeDetector detector = this.shakeDetector;
 
         directory = application.getDir("logtape", Context.MODE_PRIVATE);
 
@@ -85,28 +86,46 @@ public class LogTape {
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                detector.stop();
+                if (detector != null) {
+                    detector.stop();
+                }
+
                 LogTape.instance.currentActivity = new WeakReference<>(activity);
-                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+
+                if (detector != null) {
+                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+                }
             }
 
             @Override
             public void onActivityStarted(Activity activity) {
-                detector.stop();
+                if (detector != null) {
+                    detector.stop();
+                }
+
                 LogTape.instance.currentActivity = new WeakReference<>(activity);
-                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+                if (detector != null) {
+                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+                }
             }
 
             @Override
             public void onActivityResumed(Activity activity) {
-                detector.stop();
+                if (detector != null) {
+                    detector.stop();
+                }
                 LogTape.instance.currentActivity = new WeakReference<>(activity);
-                detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+
+                if (detector != null) {
+                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
+                }
             }
 
             @Override
             public void onActivityPaused(Activity activity) {
-                detector.stop();
+                if (detector != null) {
+                    detector.stop();
+                }
                 LogTape.instance.currentActivity = null;
             }
 
@@ -129,15 +148,15 @@ public class LogTape {
         });
     }
 
-    public static void init(int apiKeyId, Application application) {
-        init(application.getResources().getString(apiKeyId), application);
+    public static void init(int apiKeyId, Application application, LogTapeOptions options) {
+        init(application.getResources().getString(apiKeyId), application, options);
     }
 
-    public static void init(String apiKey, Application application) {
+    public static void init(String apiKey, Application application, LogTapeOptions options) {
         if (instance != null) {
             instance.apiKey = apiKey;
         } else {
-            instance = new LogTape(application, apiKey);
+            instance = new LogTape(application, apiKey, options);
         }
     }
 

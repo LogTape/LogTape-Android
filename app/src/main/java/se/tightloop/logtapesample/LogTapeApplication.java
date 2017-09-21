@@ -17,7 +17,7 @@ public class LogTapeApplication extends Application {
         super.onCreate();
 
         if (BuildConfig.DEBUG) {
-            LogTape.init(R.string.log_tape_key, this);
+            LogTape.init(R.string.log_tape_key, this, null);
         }
 
         System.out.println("**LOGTAPE: Application onCreate");
