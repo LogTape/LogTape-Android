@@ -26,10 +26,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,13 +41,45 @@ import java.util.Map;
 public class LogTape {
     static Bitmap lastScreenshot = null;
 
-    private static final int MaxNumEvents = 50;
+    private static final int MaxNumEvents = 100;
     private static LogTape instance = null;
     private WeakReference<Activity> currentActivity;
     private ShakeDetector shakeDetector = null;
     private String apiKey;
     private File directory;
     private ShakeInterceptor shakeInterceptor = new ShakeInterceptor();
+    private boolean showing = false;
+    PropertySupplier propertySupplier = null;
+
+    public interface PropertySupplier {
+        void populate(JSONArray items);
+    }
+
+    private Comparator<File> sortAlgorithm = new Comparator<File>() {
+        @Override
+        public int compare(File f1, File f2) {
+            String s1 = f1.getName();
+            String s2 = f2.getName();
+
+            String[] s1_components = s1.split("_");
+            String[] s2_components = s2.split("_");
+
+            if (s1_components.length >= 2 && s2_components.length >= 2) {
+                Long i1 = Long.parseLong(s1_components[0]);
+                Long i2 = Long.parseLong(s2_components[0]);
+
+
+                if (i1 == i2) {
+                    i1 = Long.parseLong(s1_components[1]);
+                    i2 = Long.parseLong(s2_components[1]);
+                }
+
+                return i1.compareTo(i2);
+            } else {
+                return s1.compareTo(s2);
+            }
+        }
+    };
 
     private Context getActivityContext() {
         return currentActivity.get();
@@ -53,7 +87,7 @@ public class LogTape {
 
     private class ShakeInterceptor implements ShakeDetector.Listener {
         public void hearShake() {
-            LogTape.ShowReportActivity();
+            LogTape.showReportActivity();
         }
     }
 
@@ -153,7 +187,9 @@ public class LogTape {
     }
 
     public static void init(String apiKey, Application application, LogTapeOptions options) {
-        if (instance != null) {
+        if (apiKey == null || apiKey == "") {
+            return;
+        } else if (instance != null) {
             instance.apiKey = apiKey;
         } else {
             instance = new LogTape(application, apiKey, options);
@@ -161,7 +197,7 @@ public class LogTape {
     }
 
     // Note: Should always run on background thread
-    public static void SaveScreenshotToDisk() {
+    public static void saveScreenshotToDisk() {
         if (instance == null || LogTape.lastScreenshot == null) {
             return;
         }
@@ -185,14 +221,14 @@ public class LogTape {
         }
     }
 
-    public static void ClearLog() {
+    public static void clearLog() {
         if (instance != null) {
-            instance.clearLog();
+            instance.clearLogFiles();
         }
     }
 
-    public static void ShowReportActivity() {
-        if (instance == null) {
+    public static void showReportActivity() {
+        if (instance == null || instance.showing) {
             return;
         }
 
@@ -202,17 +238,18 @@ public class LogTape {
             return;
         }
 
-        final Bitmap lastScreenshot = LogTapeUtil.getScreenShot(activity.getWindow().getDecorView().getRootView());
-
-        LogTape.lastScreenshot = lastScreenshot;
+        instance.showing = true;
 
         final ProgressDialog progress = ProgressDialog.show(activity, "Saving screenshot..",
                 "", true);
 
+        final Bitmap lastScreenshot = LogTapeUtil.getScreenShot(activity.getWindow().getDecorView().getRootView());
+        LogTape.lastScreenshot = lastScreenshot;
+
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                LogTape.SaveScreenshotToDisk();
+                LogTape.saveScreenshotToDisk();
                 return null;
             }
 
@@ -222,11 +259,12 @@ public class LogTape {
                 Intent intent = new Intent(activity.getApplicationContext(), ReportIssueActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 activity.startActivity(intent);
+                instance.showing = false;
             }
         }.execute();
     }
 
-    public static void LogObject(String tag, String message, JSONObject object) {
+    public static void logObject(String tag, String message, JSONObject object) {
         if (instance != null) {
             Map<String, String> tags = null;
 
@@ -235,10 +273,11 @@ public class LogTape {
                 tags.put(tag, "info");
             }
 
-            LogObject(message, object, tags);
+            logObject(message, object, tags);
         }
     }
-    public static void LogObject(String message, JSONObject object, Map<String, String> tags) {
+
+    public static void logObject(String message, JSONObject object, Map<String, String> tags) {
         if (instance != null) {
             instance.saveLogToDisk(new ObjectLogEvent(message, object, tags));
         }
@@ -246,22 +285,73 @@ public class LogTape {
 
     public static void Log(String msg) {
         Map<String, String> nullRef = null;
-        LogTape.Log(msg, nullRef);
+        LogTape.log(msg, nullRef);
     }
 
-    public static void Log(String tag, String msg) {
+    public static void log(String tag, String msg) {
         Map<String, String> tags = new HashMap<String, String>();
         tags.put(tag, "info");
-        LogTape.Log(msg, tags);
+        LogTape.log(msg, tags);
     }
 
-    public static void Log(String message, Map<String, String> tags) {
+    public static void log(String message, Map<String, String> tags) {
         if (instance != null) {
             instance.saveLogToDisk(new MessageLogEvent(message, tags));
         }
     }
 
-    public static Object LogRequestStart(String url,
+    public static void logHttpURLConnectionRequest(LogTapeDate startDate,
+                                                   Map<String, List<String>> requestHeaders,
+                                                   HttpURLConnection connection,
+                                                   byte[] body,
+                                                   byte[] responseBody,
+                                                   Map<String, String> tags)
+    {
+        if (instance != null) {
+            try {
+                logRequest(startDate,
+                        connection.getURL().toString(),
+                        connection.getRequestMethod(),
+                        LogTapeUtil.multiValueMapToSingleValueMap(requestHeaders),
+                        body,
+                        connection.getResponseCode(),
+                        connection.getResponseMessage(),
+                        LogTapeUtil.multiValueMapToSingleValueMap(connection.getHeaderFields()),
+                        responseBody, "", tags, true);
+            } catch (IOException e) {
+
+            }
+
+        }
+    }
+
+
+    public static void logRequest(LogTapeDate startDate,
+                                  String url,
+                                  String method,
+                                  Map<String, String> requestHeaders,
+                                  byte[] body,
+                                  int httpStatusCode,
+                                  String httpStatusText,
+                                  Map<String, String> responseHeaders,
+                                  byte[] responseBody,
+                                  String errorText,
+                                  Map<String, String> tags,
+                                  boolean logStartEvent)
+    {
+        if (instance != null) {
+            RequestStartedLogEvent req = new RequestStartedLogEvent(startDate, url, method, requestHeaders, body, tags);
+
+            if (logStartEvent) {
+                instance.saveLogToDisk(req);
+            }
+
+            LogEvent res = new RequestLogEvent(new LogTapeDate(), req, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
+            instance.saveLogToDisk(res);
+        }
+    }
+
+    public static Object logRequestStart(String url,
                                          String method,
                                          Map<String, String> requestHeaders,
                                          byte[] body,
@@ -271,14 +361,14 @@ public class LogTape {
             return null;
         }
 
-        RequestStartedLogEvent ret = new RequestStartedLogEvent(new Date(), url, method, requestHeaders, body, tags);
+        RequestStartedLogEvent ret = new RequestStartedLogEvent(new LogTapeDate(), url, method, requestHeaders, body, tags);
         instance.saveLogToDisk(ret);
 
         return ret;
     }
 
 
-    public static void LogRequestFinished(Object startEvent,
+    public static void logRequestFinished(Object startEvent,
                                           int httpStatusCode,
                                           String httpStatusText,
                                           Map<String, String> responseHeaders,
@@ -289,7 +379,7 @@ public class LogTape {
         RequestStartedLogEvent reqStartedEvent = (RequestStartedLogEvent)startEvent;
 
         if (instance != null) {
-            LogEvent ev = new RequestLogEvent(new Date(), reqStartedEvent, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
+            LogEvent ev = new RequestLogEvent(new LogTapeDate(), reqStartedEvent, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
             instance.saveLogToDisk(ev);
         }
     }
@@ -312,13 +402,7 @@ public class LogTape {
                     }
                 });
 
-                Arrays.sort(files, new Comparator()
-                {
-                    @Override
-                    public int compare(Object f1, Object f2) {
-                        return ((File) f1).getName().compareTo(((File) f2).getName());
-                    }
-                });
+                Arrays.sort(files, sortAlgorithm);
 
                 for (File file : files) {
                     try {
@@ -345,7 +429,7 @@ public class LogTape {
 
             for (int i = 0; i < logEvents.length; i++) {
                 WriteTaskData data = logEvents[i];
-                String filename = String.valueOf(data.event.timestamp.getTime()) + "_" + data.event.id + ".txt";
+                String filename = String.valueOf(data.event.timestamp.date.getTime()) + "_" + data.event.timestamp.index + "_" + data.event.id + ".txt";
                 File outputFile = new File(data.directory, filename);
                 try {
                     FileWriter writer = new FileWriter(outputFile);
@@ -373,16 +457,8 @@ public class LogTape {
                     }
                 });
 
-                Arrays.sort(files, new Comparator()
-                {
-                    @Override
-                    public int compare(Object f1, Object f2) {
-                        // Reversed to get oldest first
-                        return ((File) f2).getName().compareTo(((File) f1).getName());
-                    }
-                });
-
-
+                Arrays.sort(files, sortAlgorithm);
+                Collections.reverse(Arrays.asList(files));
 
                 int start = LogTape.MaxNumEvents;
 
@@ -419,7 +495,7 @@ public class LogTape {
         listTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, directory);
     }
 
-    private void clearLog() {
+    private void clearLogFiles() {
         CleanupTask cleanTask = new CleanupTask();
         cleanTask.clearAll = true;
         cleanTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, directory);
@@ -431,7 +507,7 @@ public class LogTape {
     }
 
     // Should always run on background thread
-    static Bitmap LoadScreenshotFromDisk() {
+    static Bitmap loadScreenshotFromDisk() {
         if (instance == null) {
             return null;
         }
@@ -446,7 +522,7 @@ public class LogTape {
     }
 
 
-    static String ApiKey() {
+    static String apiKey() {
         if (instance != null) {
             return instance.apiKey;
         } else {
@@ -454,11 +530,30 @@ public class LogTape {
         }
     }
 
-    static void GetJSONItems(IssueListResultListener listener) {
+    static void getJSONItems(IssueListResultListener listener) {
         if (instance != null) {
             instance.listEvents(listener);
         } else {
             listener.onResultReceived(new JSONArray());
         }
+    }
+
+
+    public static void setPropertySupplier(PropertySupplier supplier) {
+        if (instance != null) {
+            instance.propertySupplier = supplier;
+        }
+    }
+
+    static PropertySupplier getPropertySupplier() {
+        if (instance != null) {
+            return instance.propertySupplier;
+        } else {
+            return null;
+        }
+    }
+
+    public static boolean isEnabled() {
+        return instance != null;
     }
 }

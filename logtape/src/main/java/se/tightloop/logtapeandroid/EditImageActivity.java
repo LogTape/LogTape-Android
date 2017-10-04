@@ -33,7 +33,7 @@ public class EditImageActivity extends AppCompatActivity {
             new AsyncTask<Void, Void, Bitmap>() {
                 @Override
                 protected Bitmap doInBackground(Void... voids) {
-                    return LogTape.LoadScreenshotFromDisk();
+                    return LogTape.loadScreenshotFromDisk();
                 }
 
                 @Override

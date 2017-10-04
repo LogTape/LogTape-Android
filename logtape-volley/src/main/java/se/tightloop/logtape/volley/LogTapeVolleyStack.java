@@ -50,7 +50,7 @@ public class LogTapeVolleyStack extends HurlStack {
                 break;
         }
 
-        Object startEvent = LogTape.LogRequestStart(request.getUrl(), method, request.getHeaders(), request.getBody(), null);
+        Object startEvent = LogTape.logRequestStart(request.getUrl(), method, request.getHeaders(), request.getBody(), null);
 
         HttpResponse ret = super.performRequest(request, additionalHeaders);
 
@@ -72,7 +72,7 @@ public class LogTapeVolleyStack extends HurlStack {
                 responseHeaders.put(header.getName(), header.getValue());
             }
 
-            LogTape.LogRequestFinished(startEvent,
+            LogTape.logRequestFinished(startEvent,
                     basicResponse.getStatusLine().getStatusCode(),
                     basicResponse.getStatusLine().getReasonPhrase(),
                     responseHeaders,

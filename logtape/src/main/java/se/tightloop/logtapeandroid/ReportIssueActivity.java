@@ -53,7 +53,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             connection = (HttpURLConnection)url.openConnection();
             connection.setDoOutput(true);
 
-            String authString = "issues:" + LogTape.ApiKey();
+            String authString = "issues:" + LogTape.apiKey();
             connection.setRequestMethod("POST"); // hear you are telling that it is a POST request, which can be changed into "PUT", "GET", "DELETE" etc.
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8"); // here you are setting the `Content-Type` for the data you are sending which is `application/json`
             connection.setRequestProperty("Authorization", "Basic " + Base64.encodeToString(authString.getBytes("UTF-8"), Base64.DEFAULT));
@@ -79,7 +79,9 @@ public class ReportIssueActivity extends AppCompatActivity {
 
                 Integer deletedIssueNumber = null;
 
-                if(jsonObject.has("deletedIssueNumber")) {
+                if( jsonObject.has("deletedIssueNumber") &&
+                        !jsonObject.isNull("deletedIssueNumber"))
+                {
                     deletedIssueNumber = jsonObject.getInt("deletedIssueNumber");
                 }
 
@@ -139,6 +141,12 @@ public class ReportIssueActivity extends AppCompatActivity {
             properties.put(labelValueObject("Device model", Build.MODEL));
             properties.put(labelValueObject("Device brand", Build.BRAND));
 
+            LogTape.PropertySupplier supplier = LogTape.getPropertySupplier();
+
+            if (supplier != null) {
+                supplier.populate(properties);;
+            }
+
             body.put("images", images);
             body.put("properties", properties);
             body.put("timestamp", LogTapeUtil.getUTCDateString(new Date()));
@@ -148,7 +156,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
                     "", true);
 
-            LogTape.GetJSONItems(new LogTape.IssueListResultListener() {
+            LogTape.getJSONItems(new LogTape.IssueListResultListener() {
                 @Override
                 public void onResultReceived(JSONArray result) {
                     try {
@@ -214,7 +222,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             this.loadTask = new AsyncTask<Void, Void, Bitmap>() {
                 @Override
                 protected Bitmap doInBackground(Void... voids) {
-                    return LogTape.LoadScreenshotFromDisk();
+                    return LogTape.loadScreenshotFromDisk();
                 }
 
                 @Override
@@ -243,7 +251,7 @@ public class ReportIssueActivity extends AppCompatActivity {
         saveTask = new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                LogTape.SaveScreenshotToDisk();
+                LogTape.saveScreenshotToDisk();
                 return null;
             }
 

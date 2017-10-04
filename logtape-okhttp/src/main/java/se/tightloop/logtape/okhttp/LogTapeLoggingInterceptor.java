@@ -55,7 +55,7 @@ public class LogTapeLoggingInterceptor implements Interceptor {
         Date startDate = new Date();
         Request request = chain.request();
 
-        Object startEvent = LogTape.LogRequestStart(request.url().toString(),
+        Object startEvent = LogTape.logRequestStart(request.url().toString(),
                 request.method(),
                 multiValueMapToSingleValueMap(request.headers().toMultimap()),
                 requestBodyToBuffer(request), null);
@@ -64,7 +64,7 @@ public class LogTapeLoggingInterceptor implements Interceptor {
 
         ResponseBody copiedBody = copyBody(response.body(), 999999999);
 
-        LogTape.LogRequestFinished(startEvent,
+        LogTape.logRequestFinished(startEvent,
                 response.networkResponse().code(),
                 response.networkResponse().message(),
                 multiValueMapToSingleValueMap(response.headers().toMultimap()),

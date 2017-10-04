@@ -1,9 +1,10 @@
 package se.tightloop.logtapeandroid;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
 import java.util.Map;
 
 /**
@@ -19,7 +20,7 @@ class RequestLogEvent extends LogEvent {
     private final long elapsedTimeMs;
     private final RequestStartedLogEvent reqStartedEvent;
 
-    public RequestLogEvent(Date timestamp,
+    public RequestLogEvent(LogTapeDate timestamp,
                            RequestStartedLogEvent reqStartedEvent,
                            int httpStatusCode,
                            String httpStatusText,
@@ -29,7 +30,7 @@ class RequestLogEvent extends LogEvent {
                            Map<String, String> tags)
     {
         super(tags);
-        this.elapsedTimeMs = timestamp.getTime() - reqStartedEvent.timestamp.getTime();
+        this.elapsedTimeMs = timestamp.date.getTime() - reqStartedEvent.timestamp.date.getTime();
         this.timestamp = timestamp;
         this.reqStartedEvent = reqStartedEvent;
         this.httpStatusCode = httpStatusCode;
@@ -57,30 +58,34 @@ class RequestLogEvent extends LogEvent {
 
             JSONObject responseHeadersObj = new JSONObject();
 
-            for(Map.Entry<String, String> entry : this.responseHeaders.entrySet()) {
-                responseHeadersObj.put(entry.getKey(), entry.getValue());
+            if (responseHeaders != null) {
+                for(Map.Entry<String, String> entry : this.responseHeaders.entrySet()) {
+                    responseHeadersObj.put(entry.getKey(), entry.getValue());
+                }
             }
 
             ret.remove("type");
             ret.put("type", "REQUEST");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp));
+            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
 
             response.put("statusCode", httpStatusCode);
             response.put("statusText", httpStatusText);
             response.put("headers", responseHeadersObj);
             response.put("time", this.elapsedTimeMs);
 
-            try {
-                String utfResponseBody = new String(responseBody, "UTF-8");
-                response.put("data", utfResponseBody);
-            } catch (Exception e) {
+            if (responseBody != null) {
+                try {
+                    String utfResponseBody = new String(responseBody, "UTF-8");
+                    response.put("data", utfResponseBody);
+                } catch (Exception e) {
 
+                }
             }
 
             data.put("response", response);
             ret.put("data", data);
         } catch (JSONException exception) {
-
+            Log.e("LogTape", "Caught exception when generating req JSON: " + exception.toString());
         }
 
         return ret;

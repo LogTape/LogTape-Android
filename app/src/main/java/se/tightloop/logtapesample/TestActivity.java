@@ -47,9 +47,9 @@ public class TestActivity extends Activity {
 
         setContentView(R.layout.test_activity);
 
-        LogTape.ClearLog();
+        LogTape.clearLog();
 
-        LogTape.Log("TestActivity", "Log from TestActivity");
+        LogTape.log("TestActivity", "Log from TestActivity");
 
         JSONObject testObject = new JSONObject();
 
@@ -60,7 +60,7 @@ public class TestActivity extends Activity {
 
         }
 
-        LogTape.LogObject("TestActivity", "A test object", testObject);
+        LogTape.logObject("TestActivity", "A test object", testObject);
 
 
         fetchWithSpring();
@@ -117,6 +117,6 @@ public class TestActivity extends Activity {
     }
 
     public void launchReportActivity(View button) {
-        LogTape.ShowReportActivity();
+        LogTape.showReportActivity();
     }
 }

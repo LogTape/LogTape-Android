@@ -2,7 +2,6 @@ package se.tightloop.logtapeandroid;
 
 import org.json.JSONObject;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -12,8 +11,10 @@ import java.util.UUID;
  */
 
 class LogEvent {
-    public Date timestamp;
+    public LogTapeDate timestamp;
     public String id = "";
+
+
     public Map<String, String> tags = new HashMap<String, String>();
 
     public LogEvent(Map<String, String> tags) {

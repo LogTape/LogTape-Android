@@ -3,7 +3,6 @@ package se.tightloop.logtapeandroid;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
 import java.util.Map;
 
 /**
@@ -17,7 +16,7 @@ class ObjectLogEvent extends LogEvent {
 
     public ObjectLogEvent(String message, JSONObject object, Map<String, String> tags) {
         super(tags);
-        this.timestamp = new Date();
+        this.timestamp = new LogTapeDate();
         this.message = message;
         this.object = object;
         this.tags = tags;
@@ -32,7 +31,7 @@ class ObjectLogEvent extends LogEvent {
         try {
             ret.put("id", this.id);
             ret.put("type", "JSON");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp));
+            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
             ret.put("message", message);
 
             if (tags != null) {

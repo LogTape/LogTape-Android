@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -18,6 +21,21 @@ import java.util.TimeZone;
  */
 
 public class LogTapeUtil {
+    // We only support headers with unique keys for now. If
+    // this turns out to be problematic we will add support
+    // for multiple keys later on.
+    public static Map<String, String> multiValueMapToSingleValueMap(Map<String, List<String>> multiMap) {
+        Map<String, String> ret = new HashMap<String, String>();
+
+        for (Map.Entry<String, List<String>> entry : multiMap.entrySet()) {
+            if (entry.getKey() != null && !entry.getValue().isEmpty()) {
+                ret.put(entry.getKey(), entry.getValue().get(0));
+            }
+        }
+
+        return ret;
+    }
+
     public static byte[] getBytesFromInputStream(InputStream is) throws IOException
     {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
