@@ -23,8 +23,8 @@ public class EditImageActivity extends AppCompatActivity {
         setContentView(R.layout.edit_image_activity);
         mPaintView = (PaintView)findViewById(R.id.paintView);
 
-        if (LogTape.lastScreenshot != null) {
-            mPaintView.setBitmap(LogTape.lastScreenshot);
+        if (LogTapeImpl.lastScreenshot != null) {
+            mPaintView.setBitmap(LogTapeImpl.lastScreenshot);
         } else {
             System.out.println("**LOGTAPE: Report issue activity onCreate");
 
@@ -33,13 +33,13 @@ public class EditImageActivity extends AppCompatActivity {
             new AsyncTask<Void, Void, Bitmap>() {
                 @Override
                 protected Bitmap doInBackground(Void... voids) {
-                    return LogTape.loadScreenshotFromDisk();
+                    return LogTapeImpl.loadScreenshotFromDisk();
                 }
 
                 @Override
                 protected void onPostExecute(Bitmap file) {
                     System.out.println("**LOGTAPE: On post execute, EditImageAct");
-                    LogTape.lastScreenshot = file;
+                    LogTapeImpl.lastScreenshot = file;
                     progress.dismiss();
                     if (mPaintView != null) {
                         mPaintView.setBitmap(file);

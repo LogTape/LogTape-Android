@@ -18,16 +18,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.List;
 
 import se.tightloop.logtape.R;
 
-import static se.tightloop.logtapeandroid.LogTape.lastScreenshot;
+import static se.tightloop.logtapeandroid.LogTapeImpl.lastScreenshot;
 
 public class ReportIssueActivity extends AppCompatActivity {
     private AsyncTask<Void, Void, Void> saveTask = null;
@@ -53,7 +58,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             connection = (HttpURLConnection)url.openConnection();
             connection.setDoOutput(true);
 
-            String authString = "issues:" + LogTape.apiKey();
+            String authString = "issues:" + LogTapeImpl.apiKey();
             connection.setRequestMethod("POST"); // hear you are telling that it is a POST request, which can be changed into "PUT", "GET", "DELETE" etc.
             connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8"); // here you are setting the `Content-Type` for the data you are sending which is `application/json`
             connection.setRequestProperty("Authorization", "Basic " + Base64.encodeToString(authString.getBytes("UTF-8"), Base64.DEFAULT));
@@ -63,7 +68,6 @@ public class ReportIssueActivity extends AppCompatActivity {
 
             //Send request
             OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-            System.out.println(body.toString());
             wr.write(body.toString());
             wr.flush();
             wr.close ();
@@ -73,7 +77,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             if (response >= 200 && response <=399){
                 is = connection.getInputStream();
                 System.out.println("Got OK response");
-                String responseStr = LogTapeUtil.readStreamToString(is);
+                String responseStr = readStreamToString(is);
                 JSONObject jsonObject = new JSONObject(responseStr);
                 int issueNumber = jsonObject.getInt("issueNumber");
 
@@ -130,7 +134,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             JSONArray images = new JSONArray();
 
             if (lastScreenshot != null) {
-                images.put(LogTapeUtil.encodeImageToBase64(lastScreenshot));
+                images.put(encodeImageToBase64(lastScreenshot));
             }
 
             JSONArray properties = new JSONArray();
@@ -141,22 +145,29 @@ public class ReportIssueActivity extends AppCompatActivity {
             properties.put(labelValueObject("Device model", Build.MODEL));
             properties.put(labelValueObject("Device brand", Build.BRAND));
 
-            LogTape.PropertySupplier supplier = LogTape.getPropertySupplier();
+            LogTapePropertySupplier supplier = LogTapeImpl.getPropertySupplier();
 
             if (supplier != null) {
-                supplier.populate(properties);;
+                List<LogTapePropertySupplier.LogProperty> extraProperties = supplier.getProperties();
+
+                for(LogTapePropertySupplier.LogProperty property : extraProperties) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("label", property.label);
+                    obj.put("value", property.value);
+                    properties.put(obj);
+                }
             }
 
             body.put("images", images);
             body.put("properties", properties);
-            body.put("timestamp", LogTapeUtil.getUTCDateString(new Date()));
+            body.put("timestamp", LogEvent.getUTCDateString(new Date()));
             body.put("title", description);
 
 
             final ProgressDialog progress = ProgressDialog.show(this, "Uploading issue..",
                     "", true);
 
-            LogTape.getJSONItems(new LogTape.IssueListResultListener() {
+            LogTapeImpl.getJSONItems(new LogTapeImpl.IssueListResultListener() {
                 @Override
                 public void onResultReceived(JSONArray result) {
                     try {
@@ -212,9 +223,9 @@ public class ReportIssueActivity extends AppCompatActivity {
         setContentView(R.layout.activity_report_issue);
         System.out.println("**LOGTAPE: Report issue activity onCreate");
 
-        if (LogTape.lastScreenshot != null) {
+        if (LogTapeImpl.lastScreenshot != null) {
             final ImageView header = (ImageView)findViewById(R.id.imageView);
-            header.setImageBitmap(LogTape.lastScreenshot);
+            header.setImageBitmap(LogTapeImpl.lastScreenshot);
             saveScreenshot();
         } else {
             final WeakReference<ReportIssueActivity> reportActivity = new WeakReference<ReportIssueActivity>(this);
@@ -222,7 +233,7 @@ public class ReportIssueActivity extends AppCompatActivity {
             this.loadTask = new AsyncTask<Void, Void, Bitmap>() {
                 @Override
                 protected Bitmap doInBackground(Void... voids) {
-                    return LogTape.loadScreenshotFromDisk();
+                    return LogTapeImpl.loadScreenshotFromDisk();
                 }
 
                 @Override
@@ -238,7 +249,7 @@ public class ReportIssueActivity extends AppCompatActivity {
                             }
                         }
 
-                        LogTape.lastScreenshot = file;
+                        LogTapeImpl.lastScreenshot = file;
                     }
                 }
             }.execute();
@@ -251,7 +262,7 @@ public class ReportIssueActivity extends AppCompatActivity {
         saveTask = new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                LogTape.saveScreenshotToDisk();
+                LogTapeImpl.saveScreenshotToDisk();
                 return null;
             }
 
@@ -272,5 +283,37 @@ public class ReportIssueActivity extends AppCompatActivity {
         super.onRestart();
         System.out.println("**LOGTAPE: Report issue activity onRestart");
         saveScreenshot();
+    }
+
+    private String encodeImageToBase64(Bitmap image)
+    {
+        Bitmap immagex=image;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        immagex.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] b = baos.toByteArray();
+        String imageEncoded = Base64.encodeToString(b, Base64.DEFAULT);
+        return imageEncoded;
+    }
+
+
+    private static String readStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
     }
 }

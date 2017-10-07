@@ -14,7 +14,7 @@ class ObjectLogEvent extends LogEvent {
     private String message;
     private JSONObject object;
 
-    public ObjectLogEvent(String message, JSONObject object, Map<String, String> tags) {
+    ObjectLogEvent(String message, JSONObject object, Map<String, String> tags) {
         super(tags);
         this.timestamp = new LogTapeDate();
         this.message = message;
@@ -22,16 +22,15 @@ class ObjectLogEvent extends LogEvent {
         this.tags = tags;
     }
 
-
     @Override
-    public JSONObject toJSON() {
+    JSONObject toJSON() {
 
         JSONObject ret = new JSONObject();
 
         try {
             ret.put("id", this.id);
             ret.put("type", "JSON");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
+            ret.put("timestamp", LogEvent.getUTCDateString(timestamp.date));
             ret.put("message", message);
 
             if (tags != null) {

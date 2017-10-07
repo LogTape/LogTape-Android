@@ -15,7 +15,7 @@ class RequestStartedLogEvent extends LogEvent {
     private final Map<String, String> requestHeaders;
     private final byte[] body;
 
-    public RequestStartedLogEvent(LogTapeDate timestamp,
+    RequestStartedLogEvent(LogTapeDate timestamp,
                                   String url,
                                   String method,
                                   Map<String, String> requestHeaders,
@@ -31,7 +31,7 @@ class RequestStartedLogEvent extends LogEvent {
     }
 
     @Override
-    public JSONObject toJSON() {
+    JSONObject toJSON() {
         JSONObject ret = new JSONObject();
         JSONObject request = new JSONObject();
         JSONObject data = new JSONObject();
@@ -52,7 +52,7 @@ class RequestStartedLogEvent extends LogEvent {
             }
 
             ret.put("type", "REQUEST_START");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
+            ret.put("timestamp", LogEvent.getUTCDateString(timestamp.date));
 
             request.put("method", method);
             request.put("url", url);

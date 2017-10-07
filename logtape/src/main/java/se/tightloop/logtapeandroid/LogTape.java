@@ -1,271 +1,108 @@
 package se.tightloop.logtapeandroid;
 
-import android.app.Activity;
 import android.app.Application;
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.hardware.SensorManager;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.util.Log;
 
-import com.squareup.seismic.ShakeDetector;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by dnils on 09/10/16.
+ *   Public API class for LogTape. Provides logging and initialization functionality.
  */
-
 public class LogTape {
-    static Bitmap lastScreenshot = null;
-
-    private static final int MaxNumEvents = 100;
-    private static LogTape instance = null;
-    private WeakReference<Activity> currentActivity;
-    private ShakeDetector shakeDetector = null;
-    private String apiKey;
-    private File directory;
-    private ShakeInterceptor shakeInterceptor = new ShakeInterceptor();
-    private boolean showing = false;
-    PropertySupplier propertySupplier = null;
-
-    public interface PropertySupplier {
-        void populate(JSONArray items);
-    }
-
-    private Comparator<File> sortAlgorithm = new Comparator<File>() {
-        @Override
-        public int compare(File f1, File f2) {
-            String s1 = f1.getName();
-            String s2 = f2.getName();
-
-            String[] s1_components = s1.split("_");
-            String[] s2_components = s2.split("_");
-
-            if (s1_components.length >= 2 && s2_components.length >= 2) {
-                Long i1 = Long.parseLong(s1_components[0]);
-                Long i2 = Long.parseLong(s2_components[0]);
-
-
-                if (i1 == i2) {
-                    i1 = Long.parseLong(s1_components[1]);
-                    i2 = Long.parseLong(s2_components[1]);
-                }
-
-                return i1.compareTo(i2);
-            } else {
-                return s1.compareTo(s2);
-            }
-        }
-    };
-
-    private Context getActivityContext() {
-        return currentActivity.get();
-    }
-
-    private class ShakeInterceptor implements ShakeDetector.Listener {
-        public void hearShake() {
-            LogTape.showReportActivity();
-        }
-    }
-
-    private LogTape(Application application, String apiKey, LogTapeOptions options) {
-        if (options == null) {
-            options = new LogTapeOptions();
-        }
-
-        this.apiKey = apiKey;
-
-        if (options.trigger == LogTapeOptions.Trigger.ShakeGesture) {
-            this.shakeDetector = new ShakeDetector(this.shakeInterceptor);
-            SensorManager manager = (SensorManager)application.getSystemService(Context.SENSOR_SERVICE);
-            this.shakeDetector.start(manager);
-        }
-
-        final ShakeDetector detector = this.shakeDetector;
-
-        directory = application.getDir("logtape", Context.MODE_PRIVATE);
-
-        if (!directory.exists()) {
-            boolean result = directory.mkdirs();
-            if (!result) {
-                Log.e("LogTape", "Could not create LogTape data directory!");
-                directory = null;
-            } else {
-
-            }
-        }
-        application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-            @Override
-            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                if (detector != null) {
-                    detector.stop();
-                }
-
-                LogTape.instance.currentActivity = new WeakReference<>(activity);
-
-                if (detector != null) {
-                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
-                }
-            }
-
-            @Override
-            public void onActivityStarted(Activity activity) {
-                if (detector != null) {
-                    detector.stop();
-                }
-
-                LogTape.instance.currentActivity = new WeakReference<>(activity);
-                if (detector != null) {
-                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
-                }
-            }
-
-            @Override
-            public void onActivityResumed(Activity activity) {
-                if (detector != null) {
-                    detector.stop();
-                }
-                LogTape.instance.currentActivity = new WeakReference<>(activity);
-
-                if (detector != null) {
-                    detector.start((SensorManager)activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
-                }
-            }
-
-            @Override
-            public void onActivityPaused(Activity activity) {
-                if (detector != null) {
-                    detector.stop();
-                }
-                LogTape.instance.currentActivity = null;
-            }
-
-            @Override
-            public void onActivityStopped(Activity activity) {
-                // don't clear current activity because activity may get stopped after
-                // the new activity is resumed
-            }
-
-            @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-
-            }
-
-            @Override
-            public void onActivityDestroyed(Activity activity) {
-                // don't clear current activity because activity may get destroyed after
-                // the new activity is resumed
-            }
-        });
-    }
-
+    /**
+     *  Initializes LogTape with a resource identifier pointing to a string containing
+     *  your application ID. If an invalid resource identifier or if the corresponding
+     *  string is empty, LogTape will not be initialized and all log methods
+     *  will not perform any actual logging.
+     *
+     *  @param apiKeyId Resource identifier to a string resource containing your LogTape
+     *                  application ID
+     *  @param application The current application instance
+     *  @param options Object containing customized settings (or null if using defaults).
+     *                 See {@link LogTapeOptions} for more information.
+     */
     public static void init(int apiKeyId, Application application, LogTapeOptions options) {
         init(application.getResources().getString(apiKeyId), application, options);
     }
 
+    /**
+     *  Initializes LogTape with an application API key. It is safe to pass null or an
+     *  empty string, but in this case LogTape will not be initialized and all log methods
+     *  will not perform any actual logging.
+     *
+     *  @param apiKey Your LogTape application ID.
+     *  @param application The current application instance
+     *  @param options Object containing customized settings (or null if using defaults).
+     *                 See {@link LogTapeOptions} for more information.
+     */
     public static void init(String apiKey, Application application, LogTapeOptions options) {
         if (apiKey == null || apiKey == "") {
             return;
-        } else if (instance != null) {
-            instance.apiKey = apiKey;
+        } else if (LogTapeImpl.instance != null) {
+            LogTapeImpl.instance.apiKey = apiKey;
         } else {
-            instance = new LogTape(application, apiKey, options);
+            LogTapeImpl.instance = new LogTapeImpl(application, apiKey, options);
         }
     }
 
-    // Note: Should always run on background thread
-    public static void saveScreenshotToDisk() {
-        if (instance == null || LogTape.lastScreenshot == null) {
-            return;
-        }
-
-        File outputFile = new File(instance.directory, "screenshot.png");
-        FileOutputStream out = null;
-
-        try {
-            out = new FileOutputStream(outputFile);
-            LogTape.lastScreenshot.compress(Bitmap.CompressFormat.PNG, 100, out);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
+    /**
+     *   If LogTape is enabled, this method will clear the current log items.
+     */
     public static void clearLog() {
-        if (instance != null) {
-            instance.clearLogFiles();
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.clearLogFiles();
         }
     }
 
+    /**
+     *   If LogTape is enabled, this method will present an activity that allows the user
+     *   to upload the log to the LogTape server. Will not do anything if the activity is
+     *   already showing.
+     */
     public static void showReportActivity() {
-        if (instance == null || instance.showing) {
-            return;
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.showReportActivity();
         }
-
-        final Activity activity = instance.currentActivity.get();
-
-        if (activity == null || activity instanceof ReportIssueActivity) {
-            return;
-        }
-
-        instance.showing = true;
-
-        final ProgressDialog progress = ProgressDialog.show(activity, "Saving screenshot..",
-                "", true);
-
-        final Bitmap lastScreenshot = LogTapeUtil.getScreenShot(activity.getWindow().getDecorView().getRootView());
-        LogTape.lastScreenshot = lastScreenshot;
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                LogTape.saveScreenshotToDisk();
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                progress.dismiss();
-                Intent intent = new Intent(activity.getApplicationContext(), ReportIssueActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                activity.startActivity(intent);
-                instance.showing = false;
-            }
-        }.execute();
     }
 
+    /**
+     *   This method allows you to temporarily disable LogTape logging on an already
+     *   initialized session.
+     *
+     *   @param enabled Whether or not to enable LogTape logging.
+     */
+    public static void setEnabled(boolean enabled) {
+        LogTapeImpl.enabled = enabled;
+    }
+
+    /**
+     * This method tells you if LogTape is initialized and enabled. Can be useful to
+     * use in order to avoid doing costly log preparation calls in release builds.
+     *
+     * @return Whether or not LogTape is initialized and enabled.
+     */
+    public static boolean isEnabled() {
+        if (LogTapeImpl.instance != null) {
+            return LogTapeImpl.enabled;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * This method logs a JSON object.
+     *
+     * @param tag A string that identifies the source of the call (optional)
+     * @param message An optional message that identifies the object.
+     * @param object The JSON object to be serialized.
+     */
     public static void logObject(String tag, String message, JSONObject object) {
-        if (instance != null) {
+        if (hasValidInstance()) {
             Map<String, String> tags = null;
 
             if (tag != null) {
@@ -277,29 +114,65 @@ public class LogTape {
         }
     }
 
+    /**
+     * This method logs a JSON object.
+     *
+     * @param message An optional message that identifies the object.
+     * @param object The JSON object to be serialized.
+     * @param tags A collection of tags associated with the log call.
+     */
     public static void logObject(String message, JSONObject object, Map<String, String> tags) {
-        if (instance != null) {
-            instance.saveLogToDisk(new ObjectLogEvent(message, object, tags));
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.logObject(message, object, tags);;
         }
     }
 
-    public static void Log(String msg) {
+    /**
+     * This method logs a simple message.
+     *
+     * @param msg The message to log.
+     */
+    public static void log(String msg) {
         Map<String, String> nullRef = null;
         LogTape.log(msg, nullRef);
     }
 
-    public static void log(String tag, String msg) {
+    /**
+     * This method logs a message with a tag.
+     *
+     * @param tag A string that identifies the source of the call (optional)
+     * @param message The message to log.
+     */
+    public static void log(String tag, String message) {
         Map<String, String> tags = new HashMap<String, String>();
         tags.put(tag, "info");
-        LogTape.log(msg, tags);
+        LogTape.log(message, tags);
     }
 
+    /**
+     * This method logs a message with a tag.
+     *
+     * @param message The message to log.
+     * @param tags A collection of tags associated with the log call.
+     */
     public static void log(String message, Map<String, String> tags) {
-        if (instance != null) {
-            instance.saveLogToDisk(new MessageLogEvent(message, tags));
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.log(message, tags);
         }
     }
 
+    /**
+     * This is a convenience method to log a standard HTTPUrlConnection request.
+     *
+     * @param startDate The start date of the request. Create an instance of this object
+     *                  at the start of the request. See {@link LogTapeDate} for more information.
+     * @param requestHeaders This needs to be passed as a separate argument since it can't be
+     *                       read from the connection after it has been started, unlike the response
+     *                       headers.
+     * @param body The request body.
+     * @param responseBody The response body.
+     * @param tags A collection of tags associated with the log call.
+     */
     public static void logHttpURLConnectionRequest(LogTapeDate startDate,
                                                    Map<String, List<String>> requestHeaders,
                                                    HttpURLConnection connection,
@@ -307,7 +180,7 @@ public class LogTape {
                                                    byte[] responseBody,
                                                    Map<String, String> tags)
     {
-        if (instance != null) {
+        if (hasValidInstance()) {
             try {
                 logRequest(startDate,
                         connection.getURL().toString(),
@@ -325,7 +198,27 @@ public class LogTape {
         }
     }
 
-
+    /**
+     * This is a method to log request in a single call. Depending on your implementation it
+     * will probably make more sense to do it in two separate calls, see
+     * {@link LogTape#logRequestStart(String, String, Map, byte[], Map)}.
+     *
+     * @param startDate The start date of the request. Create an instance of this object
+     *                  at the start of the request. See {@link LogTapeDate} for more information.
+     * @param url The request URL
+     * @param method The request HTTP method
+     * @param requestHeaders The request headers of the call.
+     * @param body The request body.
+     * @param httpStatusCode The HTTP response status code.
+     * @param httpStatusText The HTTP status text (leave empty if your library doesn't provide it)
+     * @param responseHeaders The response headers of the call
+     * @param responseBody The response body.
+     * @param tags A collection of tags associated with the log call.
+     * @param logStartEvent If the request and response should be logged as separate entries.
+     *                      Recommended to do since you can hide the requests easily in the web
+     *                      UI. However, if you implement custom caching or similar mechanisms
+     *                      it might make sense to only show the response if it happens immediately.
+     */
     public static void logRequest(LogTapeDate startDate,
                                   String url,
                                   String method,
@@ -339,35 +232,57 @@ public class LogTape {
                                   Map<String, String> tags,
                                   boolean logStartEvent)
     {
-        if (instance != null) {
-            RequestStartedLogEvent req = new RequestStartedLogEvent(startDate, url, method, requestHeaders, body, tags);
-
-            if (logStartEvent) {
-                instance.saveLogToDisk(req);
-            }
-
-            LogEvent res = new RequestLogEvent(new LogTapeDate(), req, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
-            instance.saveLogToDisk(res);
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.logRequest(
+                    startDate,
+                    url,
+                    method,
+                    requestHeaders,
+                    body,
+                    httpStatusCode,
+                    httpStatusText,
+                    responseHeaders,
+                    responseBody,
+                    errorText,
+                    tags,
+                    logStartEvent);
         }
     }
 
+    /**
+     * This is a method to log the start of a request.
+     *
+     * @param url The request URL
+     * @param method The request HTTP method
+     * @param requestHeaders The request headers of the call.
+     * @param body The request body.
+     * @param tags A collection of tags associated with the log call.
+     */
     public static Object logRequestStart(String url,
                                          String method,
                                          Map<String, String> requestHeaders,
                                          byte[] body,
                                          Map<String, String> tags)
     {
-        if (instance == null) {
+        if (hasValidInstance()) {
+            return LogTapeImpl.instance.logRequestStart(url, method, requestHeaders, body, tags);
+        } else {
             return null;
         }
-
-        RequestStartedLogEvent ret = new RequestStartedLogEvent(new LogTapeDate(), url, method, requestHeaders, body, tags);
-        instance.saveLogToDisk(ret);
-
-        return ret;
     }
 
-
+    /**
+     * This is a method to log the completion of a network request. Should always be preceded by
+     * a call to {@link LogTape#logRequestStart(String, String, Map, byte[], Map)}.
+     *
+     * @param startEvent The event that started the request. Use return value from
+     *                   {@link LogTape#logRequestStart(String, String, Map, byte[], Map)}.
+     * @param httpStatusCode The HTTP response status code.
+     * @param httpStatusText The HTTP status text (leave empty if your library doesn't provide it)
+     * @param responseHeaders The response headers of the call
+     * @param responseBody The response body.
+     * @param tags A collection of tags associated with the log call.
+     */
     public static void logRequestFinished(Object startEvent,
                                           int httpStatusCode,
                                           String httpStatusText,
@@ -376,184 +291,29 @@ public class LogTape {
                                           String errorText,
                                           Map<String, String> tags)
     {
-        RequestStartedLogEvent reqStartedEvent = (RequestStartedLogEvent)startEvent;
-
-        if (instance != null) {
-            LogEvent ev = new RequestLogEvent(new LogTapeDate(), reqStartedEvent, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
-            instance.saveLogToDisk(ev);
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.logRequestFinished(startEvent, httpStatusCode, httpStatusText, responseHeaders, responseBody, errorText, tags);
         }
     }
 
-    private class WriteTaskData {
-        public LogEvent event;
-        public File directory;
-    }
+    /**
+     * This method configures a property supplier. Use property suppliers to add additional
+     * metadata to your log reports, such as git commit SHA, user session properties and so on.
+     *
+     * @param supplier The supplier that will provide LogTape with the custom properties.
+     *                 See {@link LogTapePropertySupplier} for more information.
 
-    private class ListTask extends AsyncTask<File, Void, JSONArray> {
-        @Override
-        protected JSONArray doInBackground(File... directories) {
-            JSONArray ret = new JSONArray();
-
-            for (int i = 0; i < directories.length; i++) {
-                File directory = directories[i];
-                File[] files = directory.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.toLowerCase().endsWith(".txt");
-                    }
-                });
-
-                Arrays.sort(files, sortAlgorithm);
-
-                for (File file : files) {
-                    try {
-                        InputStream is = new BufferedInputStream(new FileInputStream(file));
-                        int size = is.available();
-                        byte[] buffer = new byte[size];
-                        is.read(buffer);
-                        String json = new String(buffer, "UTF-8");
-                        JSONObject obj = new JSONObject(json);
-                        ret.put(obj);
-                    } catch (Exception e) {
-
-                    }
-                }
-            }
-
-            return ret;
+     */
+    public static void setPropertySupplier(LogTapePropertySupplier supplier) {
+        if (hasValidInstance()) {
+            LogTapeImpl.instance.setPropertySupplier(supplier);
         }
     }
 
-    private class WriteTask extends AsyncTask<WriteTaskData, Void, Void> {
-        @Override
-        protected Void doInBackground(WriteTaskData... logEvents) {
-
-            for (int i = 0; i < logEvents.length; i++) {
-                WriteTaskData data = logEvents[i];
-                String filename = String.valueOf(data.event.timestamp.date.getTime()) + "_" + data.event.timestamp.index + "_" + data.event.id + ".txt";
-                File outputFile = new File(data.directory, filename);
-                try {
-                    FileWriter writer = new FileWriter(outputFile);
-                    writer.write(data.event.toJSON().toString());
-                    writer.close();
-                } catch(Exception e) {
-                    System.err.println("Failed to write log file to disk: " + e.toString());
-                }
-            }
-
-            return null;
-        }
-    }
-
-    private class CleanupTask extends AsyncTask<File, Void, Void> {
-        boolean clearAll = false;
-
-        @Override
-        protected Void doInBackground(File... directories) {
-
-            for (File directory : directories) {
-                File[] files = directory.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.toLowerCase().endsWith(".txt");
-                    }
-                });
-
-                Arrays.sort(files, sortAlgorithm);
-                Collections.reverse(Arrays.asList(files));
-
-                int start = LogTape.MaxNumEvents;
-
-                if (clearAll) {
-                    start = 0;
-                }
-
-                for (int i = start; i < files.length; i++) {
-                    files[i].delete();
-                }
-            }
-
-            return null;
-        }
-    }
-
-    private void saveLogToDisk(LogEvent event) {
-        WriteTask writeTask = new WriteTask();
-        WriteTaskData data = new WriteTaskData();
-        data.event = event;
-        data.directory = directory;
-        writeTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, data);
-        CleanupTask cleanTask = new CleanupTask();
-        cleanTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, directory);
-    }
-
-    private void listEvents(final IssueListResultListener listener) {
-        ListTask listTask = new ListTask() {
-            @Override
-            protected void onPostExecute(JSONArray jsonArray) {
-                listener.onResultReceived(jsonArray);
-            }
-        };
-        listTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, directory);
-    }
-
-    private void clearLogFiles() {
-        CleanupTask cleanTask = new CleanupTask();
-        cleanTask.clearAll = true;
-        cleanTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, directory);
-    }
-
-
-    interface IssueListResultListener {
-        public void onResultReceived(JSONArray result);
-    }
-
-    // Should always run on background thread
-    static Bitmap loadScreenshotFromDisk() {
-        if (instance == null) {
-            return null;
-        }
-        File pngLocation = new File(instance.directory, "screenshot.png");
-        Bitmap ret = BitmapFactory.decodeFile(pngLocation.getAbsolutePath());
-
-        if (ret != null) {
-            return ret.copy(Bitmap.Config.ARGB_8888, true);
-        } else {
-            return null;
-        }
-    }
-
-
-    static String apiKey() {
-        if (instance != null) {
-            return instance.apiKey;
-        } else {
-            return "";
-        }
-    }
-
-    static void getJSONItems(IssueListResultListener listener) {
-        if (instance != null) {
-            instance.listEvents(listener);
-        } else {
-            listener.onResultReceived(new JSONArray());
-        }
-    }
-
-
-    public static void setPropertySupplier(PropertySupplier supplier) {
-        if (instance != null) {
-            instance.propertySupplier = supplier;
-        }
-    }
-
-    static PropertySupplier getPropertySupplier() {
-        if (instance != null) {
-            return instance.propertySupplier;
-        } else {
-            return null;
-        }
-    }
-
-    public static boolean isEnabled() {
-        return instance != null;
+    /**
+     * @return If our session is enabled and instantiated correctly
+     */
+    private static boolean hasValidInstance() {
+        return LogTapeImpl.instance != null && LogTapeImpl.enabled;
     }
 }

@@ -13,14 +13,14 @@ class MessageLogEvent extends LogEvent {
 
     private final String message;
 
-    public MessageLogEvent(String message, Map<String, String> tags) {
+    MessageLogEvent(String message, Map<String, String> tags) {
         super(tags);
         this.timestamp = new LogTapeDate();
         this.message = message;
     }
 
     @Override
-    public JSONObject toJSON() {
+    JSONObject toJSON() {
         JSONObject ret = new JSONObject();
 
         try {
@@ -29,7 +29,7 @@ class MessageLogEvent extends LogEvent {
                 ret.put("tags", new JSONObject(tags));
             }
             ret.put("type", "LOG");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
+            ret.put("timestamp", LogEvent.getUTCDateString(timestamp.date));
             ret.put("data", message);
         } catch (JSONException exception) {
 

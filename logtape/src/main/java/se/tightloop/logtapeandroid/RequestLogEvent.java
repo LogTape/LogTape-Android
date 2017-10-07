@@ -20,7 +20,7 @@ class RequestLogEvent extends LogEvent {
     private final long elapsedTimeMs;
     private final RequestStartedLogEvent reqStartedEvent;
 
-    public RequestLogEvent(LogTapeDate timestamp,
+    RequestLogEvent(LogTapeDate timestamp,
                            RequestStartedLogEvent reqStartedEvent,
                            int httpStatusCode,
                            String httpStatusText,
@@ -41,7 +41,7 @@ class RequestLogEvent extends LogEvent {
     }
 
     @Override
-    public JSONObject toJSON() {
+    JSONObject toJSON() {
         JSONObject ret = this.reqStartedEvent.toJSON();
         JSONObject response = new JSONObject();
         JSONObject data = null;
@@ -66,7 +66,7 @@ class RequestLogEvent extends LogEvent {
 
             ret.remove("type");
             ret.put("type", "REQUEST");
-            ret.put("timestamp", LogTapeUtil.getUTCDateString(timestamp.date));
+            ret.put("timestamp", LogEvent.getUTCDateString(timestamp.date));
 
             response.put("statusCode", httpStatusCode);
             response.put("statusText", httpStatusText);

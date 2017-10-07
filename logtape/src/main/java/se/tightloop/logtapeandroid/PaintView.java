@@ -23,7 +23,7 @@ class PaintView extends View {
     private final Paint mBitmapPaint = new Paint(Paint.DITHER_FLAG);
     private Paint mPaint = new Paint();
 
-    public PaintView(Context c, AttributeSet attributeSet) {
+    PaintView(Context c, AttributeSet attributeSet) {
         super(c, attributeSet);
         mPaint.setAntiAlias(true);
         mPaint.setColor(Color.BLACK);
@@ -36,7 +36,7 @@ class PaintView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawColor(R.color.paintBackground);
+        canvas.drawColor(getResources().getColor(R.color.paintBackground));
         if (mBitmap != null && mBitmapPaint != null) {
             canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
         }
