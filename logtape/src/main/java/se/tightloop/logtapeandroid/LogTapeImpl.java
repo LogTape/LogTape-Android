@@ -50,6 +50,7 @@ class LogTapeImpl {
     private File directory;
     private ShakeInterceptor shakeInterceptor = new ShakeInterceptor();
     private LogTapePropertySupplier propertySupplier = null;
+    private ProgressDialog progress = null;
 
     private Comparator<File> sortAlgorithm = new Comparator<File>() {
         @Override
@@ -169,6 +170,11 @@ class LogTapeImpl {
 
             @Override
             public void onActivityDestroyed(Activity activity) {
+                if (progress != null) {
+                    if (progress.isShowing()) {
+                        progress.dismiss();
+                    }
+                }
             }
         });
     }
@@ -371,7 +377,7 @@ class LogTapeImpl {
 
         showing = true;
 
-        final ProgressDialog progress = ProgressDialog.show(activity, "Saving screenshot..",
+        this.progress = ProgressDialog.show(activity, "Saving screenshot..",
                 "", true);
 
         final Bitmap lastScreenshot = getScreenShot(activity.getWindow().getDecorView().getRootView());
@@ -386,10 +392,16 @@ class LogTapeImpl {
 
             @Override
             protected void onPostExecute(Void aVoid) {
-                progress.dismiss();
-                Intent intent = new Intent(activity.getApplicationContext(), ReportIssueActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                activity.startActivity(intent);
+                if (progress != null && progress.isShowing() && !activity.isDestroyed()) {
+                    progress.dismiss();
+
+                    // If it's not showing, we've probably gone to background
+                    Intent intent = new Intent(activity.getApplicationContext(), ReportIssueActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    activity.startActivity(intent);
+                }
+
+                progress = null;
                 showing = false;
             }
         }.execute();
