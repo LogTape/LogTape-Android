@@ -16,14 +16,14 @@ import se.tightloop.logtape.R;
  * Created by dnils on 2017-08-02.
  */
 
-class PaintView extends View {
+public class PaintView extends View {
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private final Path mPath = new Path();
     private final Paint mBitmapPaint = new Paint(Paint.DITHER_FLAG);
     private Paint mPaint = new Paint();
 
-    PaintView(Context c, AttributeSet attributeSet) {
+    public PaintView(Context c, AttributeSet attributeSet) {
         super(c, attributeSet);
         mPaint.setAntiAlias(true);
         mPaint.setColor(Color.BLACK);
