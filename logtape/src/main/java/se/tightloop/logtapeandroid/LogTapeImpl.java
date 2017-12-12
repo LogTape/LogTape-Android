@@ -43,7 +43,7 @@ class LogTapeImpl {
     String apiKey;
     static boolean enabled = true;
 
-    private boolean showing = false;
+    private boolean showingProgressView = false;
     private static final int MaxNumEvents = 100;
     private WeakReference<Activity> currentActivity;
     private ShakeDetector shakeDetector = null;
@@ -117,27 +117,12 @@ class LogTapeImpl {
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                if (detector != null) {
-                    detector.stop();
-                }
 
-                currentActivity = new WeakReference<>(activity);
-
-                if (detector != null) {
-                    detector.start((SensorManager) activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
-                }
             }
 
             @Override
             public void onActivityStarted(Activity activity) {
-                if (detector != null) {
-                    detector.stop();
-                }
 
-                currentActivity = new WeakReference<>(activity);
-                if (detector != null) {
-                    detector.start((SensorManager) activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
-                }
             }
 
             @Override
@@ -146,6 +131,11 @@ class LogTapeImpl {
                     detector.stop();
                 }
                 currentActivity = new WeakReference<>(activity);
+
+
+                if (activity instanceof ReportIssueActivity) {
+                    showingProgressView = false;
+                }
 
                 if (detector != null) {
                     detector.start((SensorManager) activity.getApplicationContext().getSystemService(Context.SENSOR_SERVICE));
@@ -365,7 +355,7 @@ class LogTapeImpl {
     }
 
     void showReportActivity() {
-        if (showing || !LogTapeImpl.enabled) {
+        if (showingProgressView || !LogTapeImpl.enabled || currentActivity == null) {
             return;
         }
 
@@ -375,7 +365,7 @@ class LogTapeImpl {
             return;
         }
 
-        showing = true;
+        showingProgressView = true;
 
         this.progress = ProgressDialog.show(activity, "Saving screenshot..",
                 "", true);
@@ -402,7 +392,6 @@ class LogTapeImpl {
                 }
 
                 progress = null;
-                showing = false;
             }
         }.execute();
     }
