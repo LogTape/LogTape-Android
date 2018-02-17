@@ -180,6 +180,8 @@ public class LogTape {
                                                    byte[] responseBody,
                                                    Map<String, String> tags)
     {
+        startDate = validateDate(startDate);
+
         if (hasValidInstance()) {
             try {
                 logRequest(startDate,
@@ -232,6 +234,8 @@ public class LogTape {
                                   Map<String, String> tags,
                                   boolean logStartEvent)
     {
+        startDate = validateDate(startDate);
+
         if (hasValidInstance()) {
             LogTapeImpl.instance.logRequest(
                     startDate,
@@ -315,5 +319,13 @@ public class LogTape {
      */
     private static boolean hasValidInstance() {
         return LogTapeImpl.instance != null && LogTapeImpl.enabled;
+    }
+
+    private static LogTapeDate validateDate(LogTapeDate date) {
+        if (date == null || date.date == null) {
+            return new LogTapeDate();
+        } else {
+            return date;
+        }
     }
 }

@@ -195,6 +195,10 @@ public class ReportIssueActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        if (activity.isFinishing() || activity.isDestroyed()) {
+                            return;
+                        }
+
                         progress.dismiss();
                         if (result != null) {
                             String format = getResources().getString(R.string.issue_uploaded_with_id);
